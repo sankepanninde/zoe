@@ -1,0 +1,253 @@
+// ===========================================
+// ZOE — Schema de Base de Datos
+// Multi-tenant SaaS para iglesias
+// ===========================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================================
+// TENANT: Iglesia
+// Cada iglesia es un "tenant" aislado
+// ===========================================
+model Church {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  timezone  String   @default("America/Bogota")
+  country   String   @default("CO")
+  phone     String?
+  email     String?
+  address   String?
+  logoUrl   String?
+  active    Boolean  @default(true)
+
+  // Suscripción (se detalla en Fase 2)
+  plan             Plan     @default(FREE)
+  trialEndsAt      DateTime?
+  subscriptionId   String?
+  subscriptionEnds DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users          User[]
+  serviceTypes   ServiceType[]
+  services       Service[]
+  auditLogs      AuditLog[]
+  refreshTokens  RefreshToken[]
+
+  @@index([slug])
+  @@index([active])
+}
+
+enum Plan {
+  FREE
+  BASIC
+  STANDARD
+  PRO
+}
+
+// ===========================================
+// USUARIOS
+// ===========================================
+model User {
+  id           String   @id @default(cuid())
+  churchId     String
+  church       Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  email        String
+  passwordHash String
+  name         String
+  phone        String?
+  avatarUrl    String?
+
+  role         Role     @default(TECHNICIAN)
+  position     String?  // "FOH", "Monitores", "Streaming", etc.
+  active       Boolean  @default(true)
+  lastLoginAt  DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignments    Assignment[]
+  availabilities Availability[]
+  refreshTokens  RefreshToken[]
+  auditLogs      AuditLog[]
+
+  @@unique([churchId, email])
+  @@index([churchId])
+  @@index([email])
+}
+
+enum Role {
+  SUPER_ADMIN   // Dueño del SaaS (tú)
+  ADMIN         // Líder general de la iglesia
+  LEADER        // Líder del ministerio
+  TECHNICIAN    // Técnico
+}
+
+// ===========================================
+// REFRESH TOKENS (sesiones persistentes)
+// ===========================================
+model RefreshToken {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  churchId   String
+  church     Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  userAgent  String?
+  ipAddress  String?
+
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([churchId])
+  @@index([expiresAt])
+}
+
+// ===========================================
+// TIPOS DE SERVICIO
+// Ej: Culto General, Damas, Jóvenes, Ensayo
+// ===========================================
+model ServiceType {
+  id          String   @id @default(cuid())
+  churchId    String
+  church      Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  color       String   @default("#6366f1")
+  icon        String?  // emoji o nombre de ícono
+  active      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  services    Service[]
+
+  @@unique([churchId, name])
+  @@index([churchId])
+}
+
+// ===========================================
+// SERVICIOS (eventos agendados)
+// ===========================================
+model Service {
+  id            String        @id @default(cuid())
+  churchId      String
+  church        Church        @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  serviceTypeId String
+  serviceType   ServiceType   @relation(fields: [serviceTypeId], references: [id])
+
+  title         String?       // opcional, si quieres ponerle nombre específico
+  date          DateTime      // fecha del servicio
+  startTime     String        // "19:00"
+  endTime       String        // "21:00"
+  location      String?
+  notes         String?
+
+  status        ServiceStatus @default(PENDING)
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  assignments   Assignment[]
+
+  @@index([churchId])
+  @@index([churchId, date])
+  @@index([serviceTypeId])
+}
+
+enum ServiceStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+// ===========================================
+// ASIGNACIONES (técnicos asignados a servicios)
+// ===========================================
+model Assignment {
+  id          String            @id @default(cuid())
+  serviceId   String
+  service     Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  position    String            // "FOH", "Monitores", "Streaming"
+  status      AssignmentStatus  @default(PENDING)
+  confirmedAt DateTime?
+  notes       String?
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([serviceId, userId])
+  @@index([serviceId])
+  @@index([userId])
+}
+
+enum AssignmentStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+// ===========================================
+// DISPONIBILIDAD (días que NO puede servir)
+// ===========================================
+model Availability {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date       DateTime
+  available  Boolean  @default(true)
+  reason     String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+// ===========================================
+// AUDIT LOG (auditoría de acciones críticas)
+// ===========================================
+model AuditLog {
+  id         String   @id @default(cuid())
+  churchId   String
+  church     Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  action     String   // "CREATE_SERVICE", "UPDATE_ASSIGNMENT", "LOGIN_SUCCESS", etc.
+  entity     String?  // "Service", "Assignment", "User"
+  entityId   String?
+  metadata   Json?    // datos extra (cambios, IP, etc.)
+  ipAddress  String?
+  userAgent  String?
+
+  createdAt  DateTime @default(now())
+
+  @@index([churchId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
