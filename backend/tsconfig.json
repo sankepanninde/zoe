@@ -19,11 +19,7 @@
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "declaration": false,
-    "noEmitOnError": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    "noEmitOnError": true
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]

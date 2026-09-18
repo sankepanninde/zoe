@@ -1,0 +1,551 @@
+/* ===========================================
+   FULLCALENDAR — Tema Premium Zoe
+   =========================================== */
+
+.zoe-calendar .fc {
+  --fc-border-color: hsl(var(--border));
+  --fc-button-bg-color: transparent;
+  --fc-button-border-color: transparent;
+  --fc-button-hover-bg-color: hsl(var(--surface-elevated));
+  --fc-button-hover-border-color: transparent;
+  --fc-button-active-bg-color: hsl(var(--surface-elevated));
+  --fc-button-active-border-color: transparent;
+  --fc-event-border-color: transparent;
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: hsl(var(--surface-elevated));
+  --fc-today-bg-color: rgba(99, 102, 241, 0.045);
+  --fc-highlight-color: rgba(99, 102, 241, 0.12);
+  --fc-now-indicator-color: #6366f1;
+
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  height: 100%;
+}
+
+/* ===========================================
+   TOOLBAR
+   =========================================== */
+.zoe-calendar .fc-toolbar {
+  margin-bottom: 1rem !important;
+  padding: 0 0.25rem;
+  flex-shrink: 0;
+}
+
+.zoe-calendar .fc-toolbar-chunk {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.zoe-calendar .fc-toolbar-title {
+  font-family: 'Fraunces', serif !important;
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  color: hsl(var(--foreground)) !important;
+  letter-spacing: -0.02em;
+  text-transform: capitalize;
+  margin: 0 !important;
+}
+
+/* Botones */
+.zoe-calendar .fc-button {
+  height: 2.25rem !important;
+  padding: 0 0.75rem !important;
+  border-radius: 0.625rem !important;
+  font-family: inherit !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  color: hsl(var(--foreground-muted)) !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  text-transform: capitalize !important;
+  transition: all 0.15s ease !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoe-calendar .fc-button:hover {
+  background: hsl(var(--surface-elevated)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.zoe-calendar .fc-button:focus,
+.zoe-calendar .fc-button:active,
+.zoe-calendar .fc-button.fc-button-active {
+  background: hsl(var(--surface-elevated)) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.zoe-calendar .fc-button .fc-icon {
+  font-size: 1.125rem;
+}
+
+/* Prev / Next / Hoy — estilo ghost */
+.zoe-calendar .fc-prev-button,
+.zoe-calendar .fc-next-button {
+  background: hsl(var(--surface)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  color: hsl(var(--foreground)) !important;
+  width: 2.25rem !important;
+  padding: 0 !important;
+}
+
+.zoe-calendar .fc-prev-button:hover,
+.zoe-calendar .fc-next-button:hover {
+  background: hsl(var(--surface-elevated)) !important;
+  border-color: hsl(var(--border-strong)) !important;
+}
+
+.zoe-calendar .fc-today-button {
+  background: hsl(var(--surface)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  color: hsl(var(--foreground)) !important;
+  padding: 0 1rem !important;
+}
+
+.zoe-calendar .fc-today-button:hover:not(:disabled) {
+  background: hsl(var(--surface-elevated)) !important;
+  border-color: hsl(var(--border-strong)) !important;
+}
+
+.zoe-calendar .fc-today-button:disabled {
+  opacity: 0.35 !important;
+}
+
+/* Grupo prev/next */
+.zoe-calendar .fc-button-group:has(.fc-prev-button) {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  gap: 0.25rem !important;
+}
+
+/* Vista activa (Mes/Semana/Lista) */
+.zoe-calendar .fc-button-group {
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.75rem;
+  padding: 0.1875rem;
+  gap: 0.125rem;
+}
+
+.zoe-calendar .fc-button-group .fc-button {
+  height: 1.875rem !important;
+  padding: 0 0.75rem !important;
+  border-radius: 0.5rem !important;
+  border: none !important;
+  font-size: 0.75rem !important;
+}
+
+.zoe-calendar .fc-button-group .fc-button.fc-button-active {
+  background: hsl(var(--foreground)) !important;
+  color: hsl(var(--background)) !important;
+  font-weight: 600 !important;
+}
+
+.zoe-calendar .fc-button-group .fc-button.fc-button-active:hover {
+  background: hsl(var(--foreground)) !important;
+  color: hsl(var(--background)) !important;
+}
+
+/* ===========================================
+   ENCABEZADOS DE DÍAS
+   =========================================== */
+.zoe-calendar .fc-scrollgrid {
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.zoe-calendar .fc-scrollgrid-section-header > th {
+  background: hsl(var(--surface)) !important;
+}
+
+.zoe-calendar .fc-col-header-cell {
+  padding: 0.75rem 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+}
+
+.zoe-calendar .fc-col-header-cell-cushion {
+  font-size: 0.6875rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: hsl(var(--foreground-subtle)) !important;
+  padding: 0 !important;
+  text-decoration: none !important;
+}
+
+/* ===========================================
+   CELDAS DE DÍAS
+   =========================================== */
+.zoe-calendar .fc-daygrid-day {
+  transition: background 0.15s ease;
+  border-color: hsl(var(--border)) !important;
+}
+
+.zoe-calendar .fc-daygrid-day:hover {
+  background: hsl(var(--surface-elevated) / 0.5) !important;
+}
+
+.zoe-calendar .fc-daygrid-day-frame {
+  min-height: 5.5rem !important;
+  padding: 0.375rem !important;
+}
+
+.zoe-calendar .fc-daygrid-day-top {
+  flex-direction: row !important;
+  padding-bottom: 0.25rem;
+}
+
+.zoe-calendar .fc-daygrid-day-number {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: hsl(var(--foreground)) !important;
+  padding: 0 !important;
+  width: 1.625rem;
+  height: 1.625rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  transition: all 0.15s ease;
+  text-decoration: none !important;
+}
+
+.zoe-calendar .fc-day-other .fc-daygrid-day-number {
+  color: hsl(var(--foreground-subtle)) !important;
+  opacity: 0.4;
+}
+
+.zoe-calendar .fc-day-today {
+  background: var(--fc-today-bg-color) !important;
+}
+
+.zoe-calendar .fc-day-today .fc-daygrid-day-number {
+  background: hsl(var(--foreground)) !important;
+  color: hsl(var(--background)) !important;
+}
+
+/* Fin de semana */
+.zoe-calendar .fc-day-sat .fc-daygrid-day-number,
+.zoe-calendar .fc-day-sun .fc-daygrid-day-number {
+  color: hsl(var(--primary)) !important;
+  font-weight: 700 !important;
+}
+
+.zoe-calendar .fc-day-sat.fc-day-today .fc-daygrid-day-number,
+.zoe-calendar .fc-day-sun.fc-day-today .fc-daygrid-day-number {
+  color: hsl(var(--background)) !important;
+}
+
+/* ===========================================
+   EVENTOS
+   =========================================== */
+.zoe-calendar .fc-event {
+  border: none !important;
+  border-radius: 0.375rem !important;
+  padding: 0.1875rem 0.5rem !important;
+  margin: 2px 0 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+  font-size: 0.6875rem !important;
+}
+
+.zoe-calendar .fc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+  filter: brightness(1.06);
+}
+
+.zoe-calendar .fc-event-main {
+  color: inherit !important;
+  font-weight: 500;
+  padding: 0 !important;
+  width: 100%;
+}
+
+.zoe-calendar .fc-event-main-frame {
+  display: block !important;
+  width: 100%;
+  padding: 0 !important;
+}
+
+.zoe-calendar .fc-event-title {
+  font-weight: 600 !important;
+  font-size: 0.6875rem !important;
+  padding: 0 !important;
+}
+
+.zoe-calendar .fc-event-time {
+  font-weight: 700 !important;
+  font-size: 0.6875rem !important;
+  opacity: 0.95;
+}
+
+.zoe-calendar .fc-daygrid-event-harness {
+  margin-top: 2px !important;
+}
+
+.zoe-calendar .fc-daygrid-event {
+  white-space: nowrap !important;
+}
+
+/* .fc-event-main-frame es el contenedor del renderEventContent */
+.zoe-calendar .fc-event-main-frame {
+  display: block !important;
+  padding: 0 !important;
+}
+
+.zoe-calendar .fc-event:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.97);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+.zoe-calendar .fc-event-main {
+  color: inherit !important;
+  font-weight: 500;
+  padding: 0 !important;
+}
+
+.zoe-calendar .fc-event-title {
+  font-weight: 600 !important;
+  font-size: 0.6875rem !important;
+  padding: 0 !important;
+}
+
+.zoe-calendar .fc-event-time {
+  font-weight: 500 !important;
+  font-size: 0.6875rem !important;
+  opacity: 0.85;
+}
+
+.zoe-calendar .fc-daygrid-event-harness {
+  margin-top: 0 !important;
+}
+
+.zoe-calendar .fc-daygrid-event {
+  white-space: nowrap !important;
+}
+
+/* "+N más" */
+.zoe-calendar .fc-daygrid-more-link {
+  font-size: 0.625rem !important;
+  font-weight: 600 !important;
+  color: hsl(var(--primary)) !important;
+  padding: 0.0625rem 0.3125rem !important;
+  border-radius: 0.25rem;
+  background: hsl(var(--primary) / 0.08);
+  transition: all 0.15s ease;
+  text-decoration: none !important;
+  margin-top: 1px;
+}
+
+.zoe-calendar .fc-daygrid-more-link:hover {
+  background: hsl(var(--primary) / 0.15);
+}
+
+/* Popover */
+.zoe-calendar .fc-popover {
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.75rem !important;
+  box-shadow:
+    0 20px 50px -12px rgba(0, 0, 0, 0.15),
+    0 0 0 1px hsl(var(--border)) !important;
+  overflow: hidden;
+  background: hsl(var(--surface)) !important;
+}
+
+.zoe-calendar .fc-popover-header {
+  background: hsl(var(--surface)) !important;
+  padding: 0.625rem 0.875rem !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+  font-family: 'Fraunces', serif !important;
+  font-weight: 600 !important;
+  font-size: 0.8125rem !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.zoe-calendar .fc-popover-body {
+  padding: 0.375rem !important;
+  background: hsl(var(--surface)) !important;
+}
+
+/* ===========================================
+   VISTA DE TIEMPO (SEMANA)
+   =========================================== */
+.zoe-calendar .fc-timegrid-slot {
+  height: 2.75rem !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+.zoe-calendar .fc-timegrid-slot-label {
+  font-size: 0.625rem !important;
+  font-weight: 600 !important;
+  color: hsl(var(--foreground-subtle)) !important;
+  padding-right: 0.625rem !important;
+}
+
+.zoe-calendar .fc-timegrid-slot-label-cushion {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.zoe-calendar .fc-timegrid-axis {
+  border-color: hsl(var(--border)) !important;
+}
+
+.zoe-calendar .fc-timegrid-now-indicator-line {
+  border-color: hsl(var(--primary)) !important;
+  border-width: 2px 0 0 !important;
+}
+
+.zoe-calendar .fc-timegrid-now-indicator-arrow {
+  border-color: hsl(var(--primary)) !important;
+}
+
+.zoe-calendar .fc-timegrid-event {
+  border-radius: 0.5rem !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ===========================================
+   VISTA DE LISTA
+   =========================================== */
+.zoe-calendar .fc-list {
+  border: none !important;
+  border-radius: 0.75rem !important;
+  overflow: hidden;
+}
+
+.zoe-calendar .fc-list-day-cushion {
+  background: hsl(var(--surface-elevated)) !important;
+  padding: 0.625rem 1rem !important;
+}
+
+.zoe-calendar .fc-list-day-text,
+.zoe-calendar .fc-list-day-side-text {
+  font-family: 'Fraunces', serif !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  color: hsl(var(--foreground)) !important;
+  text-decoration: none !important;
+  text-transform: capitalize;
+}
+
+.zoe-calendar .fc-list-event {
+  cursor: pointer;
+}
+
+.zoe-calendar .fc-list-event:hover td {
+  background: hsl(var(--surface-elevated)) !important;
+}
+
+.zoe-calendar .fc-list-event td {
+  padding: 0.625rem 1rem !important;
+  border-color: hsl(var(--border)) !important;
+  font-size: 0.8125rem !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.zoe-calendar .fc-list-event-time {
+  color: hsl(var(--foreground-muted)) !important;
+  font-weight: 500 !important;
+}
+
+.zoe-calendar .fc-list-event-title {
+  font-weight: 500 !important;
+}
+
+.zoe-calendar .fc-list-event-graphic {
+  padding-right: 0.75rem !important;
+}
+
+.zoe-calendar .fc-list-event-dot {
+  border-width: 5px !important;
+  border-radius: 4px !important;
+}
+
+/* ===========================================
+   AJUSTES GENERALES
+   =========================================== */
+.zoe-calendar .fc-theme-standard td,
+.zoe-calendar .fc-theme-standard th {
+  border-color: hsl(var(--border)) !important;
+}
+
+.zoe-calendar .fc-scroller {
+  scrollbar-width: thin;
+}
+
+.zoe-calendar .fc-scroller::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.zoe-calendar .fc-scroller::-webkit-scrollbar-thumb {
+  background: hsl(var(--border-strong));
+  border-radius: 999px;
+}
+
+.zoe-calendar .fc-scroller::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground-subtle));
+}
+
+/* Highlight al seleccionar */
+.zoe-calendar .fc-highlight {
+  background: hsl(var(--primary) / 0.08) !important;
+  border-radius: 0.5rem;
+  box-shadow: inset 0 0 0 1.5px hsl(var(--primary) / 0.4);
+}
+
+/* Select del filtro */
+.zoe-filter-select {
+  height: 2.5rem;
+  padding: 0 2.5rem 0 0.875rem;
+  border-radius: 0.75rem;
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--surface));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.875rem center;
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  transition: all 0.15s ease;
+  cursor: pointer;
+  outline: none;
+}
+
+.zoe-filter-select:hover {
+  background-color: hsl(var(--surface-elevated));
+  border-color: hsl(var(--border-strong));
+}
+
+.zoe-filter-select:focus {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+}
+
+.zoe-filter-select:hover {
+  background-color: hsl(var(--surface-elevated));
+}
+
+.zoe-filter-select:focus {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+}

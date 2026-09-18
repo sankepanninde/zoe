@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import './styles/fullcalendar.css';
+
+@layer base {
+  :root {
+    --background: 40 24% 96%;
+    --surface: 0 0% 100%;
+    --surface-elevated: 40 20% 98%;
+    --border: 40 12% 88%;
+    --border-strong: 40 10% 80%;
+    --foreground: 24 10% 10%;
+    --foreground-muted: 24 6% 35%;
+    --foreground-subtle: 24 5% 50%;
+  }
+
+  .dark {
+    --background: 20 14% 4%;
+    --surface: 20 14% 9%;
+    --surface-elevated: 20 14% 12%;
+    --border: 20 8% 18%;
+    --border-strong: 20 8% 24%;
+    --foreground: 60 9% 98%;
+    --foreground-muted: 24 6% 70%;
+    --foreground-subtle: 24 5% 55%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: 'Fraunces', serif;
+    font-optical-sizing: auto;
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    @apply text-3xl font-semibold;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold;
+  }
+
+  h3 {
+    @apply text-xl font-medium;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border-strong));
+    border-radius: 999px;
+    border: 2px solid hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--foreground-subtle));
+  }
+}
+
+@layer components {
+  .zoe-card {
+    @apply rounded-2xl border border-border bg-surface p-6 shadow-soft;
+  }
+
+  .zoe-glass {
+    @apply rounded-2xl border border-border bg-surface/60 backdrop-blur-xl;
+  }
+
+  .zoe-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-glow transition-all hover:bg-primary-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .zoe-btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-surface-elevated active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .zoe-btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-foreground-muted transition-colors hover:bg-surface-elevated hover:text-foreground;
+  }
+
+  .zoe-input {
+    @apply w-full rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-foreground placeholder:text-foreground-subtle transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+  }
+
+  .zoe-label {
+    @apply mb-1.5 block text-sm font-medium text-foreground;
+  }
+}

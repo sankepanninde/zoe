@@ -8,8 +8,12 @@ import { env } from './lib/env.js';
 import { logger } from './lib/logger.js';
 import { prisma } from './lib/prisma.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
+import { churchRoutes } from './modules/church/church.routes.js';
+import { serviceTypesRoutes } from './modules/service-types/service-types.routes.js';
+import { servicesRoutes } from './modules/services/services.routes.js';
 import { AuthError } from './modules/auth/auth.service.js';
 import { ZodError } from 'zod';
+import { assignmentsRoutes } from './modules/assignments/assignments.routes.js';
 
 const app = Fastify({
   loggerInstance: logger,
@@ -44,6 +48,7 @@ await app.register(rateLimit, {
     error: 'Too Many Requests',
     message: 'Demasiadas solicitudes. Intenta de nuevo en un momento.',
   }),
+  
 });
 
 // ===========================================
@@ -62,13 +67,17 @@ app.get('/health', async () => ({
 // ===========================================
 
 await app.register(authRoutes, { prefix: '/api/auth' });
+await app.register(churchRoutes, { prefix: '/api/churches' });
+await app.register(serviceTypesRoutes, { prefix: '/api/service-types' });
+await app.register(servicesRoutes, { prefix: '/api/services' });
+await app.register(assignmentsRoutes, { prefix: '/api/services' });
 
 // ===========================================
 // MANEJO GLOBAL DE ERRORES
 // ===========================================
 
-app.setErrorHandler((error, request, reply) => {
-  // Zod (validación de input)
+app.setErrorHandler((error: unknown, request, reply) => {
+  // Zod
   if (error instanceof ZodError) {
     return reply.status(400).send({
       statusCode: 400,
@@ -78,7 +87,7 @@ app.setErrorHandler((error, request, reply) => {
     });
   }
 
-  // AuthError (nuestros errores controlados)
+  // AuthError
   if (error instanceof AuthError) {
     return reply.status(error.statusCode).send({
       statusCode: error.statusCode,
@@ -87,8 +96,19 @@ app.setErrorHandler((error, request, reply) => {
     });
   }
 
-  // Errores de Fastify con statusCode
-  const statusCode = error.statusCode ?? 500;
+  // Fastify error (tiene statusCode y message)
+  const err = error as { statusCode?: number; name?: string; message?: string; validation?: unknown };
+
+  if (err.validation) {
+    return reply.status(400).send({
+      statusCode: 400,
+      error: 'Bad Request',
+      message: 'Error de validación',
+      details: err.validation,
+    });
+  }
+
+  const statusCode = err.statusCode ?? 500;
   if (statusCode >= 500) {
     logger.error({ err: error, url: request.url, method: request.method }, 'Error interno');
   }
@@ -96,11 +116,11 @@ app.setErrorHandler((error, request, reply) => {
   const message =
     env.NODE_ENV === 'production' && statusCode === 500
       ? 'Error interno del servidor'
-      : error.message;
+      : err.message || 'Error desconocido';
 
   return reply.status(statusCode).send({
     statusCode,
-    error: error.name || 'Error',
+    error: err.name || 'Error',
     message,
   });
 });
