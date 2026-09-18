@@ -12,6 +12,7 @@ import {
   deleteService,
 } from '@/lib/services.api';
 import type { Service, ServiceType } from '@/types';
+import { AssignmentsSection } from './AssignmentsSection';
 
 const serviceFormSchema = z
   .object({
@@ -265,6 +266,16 @@ export function ServiceModal({
               className="zoe-input resize-none"
             />
           </div>
+
+                    {/* Asignaciones — solo al editar servicios existentes */}
+          {isEditing && service && (
+            <AssignmentsSection
+              service={service}
+              onUpdate={() => {
+                // La invalidación la hace el propio componente
+              }}
+            />
+          )}
 
           {/* Footer */}
           <div className="flex justify-between gap-3 border-t border-border pt-4">

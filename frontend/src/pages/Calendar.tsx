@@ -97,6 +97,11 @@ export function Calendar() {
 
   const renderEventContent = (arg: EventContentArg) => {
   const icon = arg.event.extendedProps.icon as string | undefined;
+  const service = arg.event.extendedProps.service as Service;
+  const assignedCount = service.assignments?.length ?? 0;
+  const confirmedCount =
+    service.assignments?.filter((a) => a.status === 'CONFIRMED').length ?? 0;
+
   return (
     <div className="flex w-full items-center gap-1 overflow-hidden px-1.5">
       {icon && <span className="shrink-0 text-[10px] leading-none">{icon}</span>}
