@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Loader2, X } from 'lucide-react';
 import { getApiError } from '@/lib/api';
 import { createUser, updateUser } from '@/lib/users.api';
-import type { User, UserRole } from '@/types';
+import type { User } from '@/types';
 
 const userFormSchema = z.object({
   name: z.string().min(2, 'El nombre es requerido').max(100),
