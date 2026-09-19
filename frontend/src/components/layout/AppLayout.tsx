@@ -14,8 +14,10 @@ export function AppLayout({ title, subtitle, children }: AppLayoutProps) {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header title={title} subtitle={subtitle} />
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          {children}
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div className="mx-auto w-full max-w-6xl animate-fade-in p-4 md:p-6 lg:p-8">
+            {children}
+          </div>
         </main>
       </div>
     </div>

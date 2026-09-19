@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/stores/auth.store';
 import { cn, getInitials } from '@/lib/utils';
+import { MobileNav } from './MobileNav';
 
 const navItems = [
   { to: '/', label: 'Inicio', icon: LayoutDashboard, end: true },
@@ -137,7 +138,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <main className="flex min-w-0 flex-1 flex-col gap-6">
           {/* HEADER */}
           <header className="flex flex-col gap-4 pt-1 md:flex-row md:items-start md:justify-between">
-            <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+              <MobileNav />
+              <div className="min-w-0 flex-1">
               {/* Breadcrumb */}
               <div className="mb-1 flex items-center gap-2 text-xs font-medium tracking-wide text-foreground-subtle">
                 <span className="truncate">{church?.name ?? 'Mi iglesia'}</span>
@@ -146,11 +149,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
 
               {/* Title */}
-              <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
+              <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                 Resumen General
               </h1>
 
-              {/* Pills */}
+                            {/* Pills */}
               <div className="mt-3 flex items-center gap-2">
                 <button className="rounded-full border border-primary-200/60 bg-primary-50 px-4 py-1.5 text-xs font-semibold text-primary-700 shadow-sm transition hover:bg-primary-100">
                   Vista General
@@ -159,8 +162,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   Mi ministerio
                 </button>
               </div>
+              </div>
             </div>
 
+            {/* Right side: search + user */}
+          
             {/* Right side: search + user */}
             <div className="flex items-center gap-3">
               {/* Search */}
