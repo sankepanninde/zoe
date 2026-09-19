@@ -3,30 +3,30 @@ import crypto from 'node:crypto';
 import { env } from './env.js';
 
 export interface AccessTokenPayload {
-  sub: string; // userId
+  sub: string;
   churchId: string;
   role: string;
   email: string;
 }
 
 export interface RefreshTokenPayload {
-  sub: string; // userId
+  sub: string;
   churchId: string;
-  jti: string; // token id (para revocación)
+  jti: string;
 }
 
 export function signAccessToken(payload: AccessTokenPayload): string {
   return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
     expiresIn: env.JWT_ACCESS_EXPIRES_IN,
     issuer: 'zoe-backend',
-  });
+  } as jwt.SignOptions);
 }
 
 export function signRefreshToken(payload: RefreshTokenPayload): string {
   return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
     expiresIn: env.JWT_REFRESH_EXPIRES_IN,
     issuer: 'zoe-backend',
-  });
+  } as jwt.SignOptions);
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
@@ -53,7 +53,9 @@ export function hashToken(token: string): string {
  */
 export function parseDuration(duration: string): number {
   const match = duration.match(/^(\d+)([smhd])$/);
-  if (!match) throw new Error(`Formato de duración inválido: ${duration}`);
+  if (!match || !match[1] || !match[2]) {
+    throw new Error(`Formato de duración inválido: ${duration}`);
+  }
   const value = Number(match[1]);
   const unit = match[2];
   const multipliers: Record<string, number> = {
@@ -62,5 +64,9 @@ export function parseDuration(duration: string): number {
     h: 60 * 60 * 1000,
     d: 24 * 60 * 60 * 1000,
   };
-  return value * (multipliers[unit] ?? 1000);
+  const multiplier = multipliers[unit];
+  if (multiplier === undefined) {
+    throw new Error(`Unidad de duración inválida: ${unit}`);
+  }
+  return value * multiplier;
 }
