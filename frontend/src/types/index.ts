@@ -26,6 +26,9 @@ export interface User {
   phone?: string | null;
   position?: string | null;
   avatarUrl?: string | null;
+  active: boolean;
+  lastLoginAt?: string | null;
+  createdAt?: string;
   church?: Church;
 }
 

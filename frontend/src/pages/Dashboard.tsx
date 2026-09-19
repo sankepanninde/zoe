@@ -9,7 +9,6 @@ import {
   TrendingUp,
   AlertCircle,
   Calendar as CalendarIcon,
-  Users as UsersIcon,
   ChevronRight,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
