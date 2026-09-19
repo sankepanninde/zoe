@@ -22,7 +22,7 @@ export function Sidebar() {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-surface">
+    <aside className="hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-surface lg:flex">
       {/* Logo — nombre de la iglesia */}
       <div className="flex h-16 items-center gap-3 border-b border-border px-6">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary">
