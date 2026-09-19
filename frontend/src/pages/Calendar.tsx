@@ -95,23 +95,22 @@ export function Calendar() {
     handleCloseModal();
   };
 
-  const renderEventContent = (arg: EventContentArg) => {
-  const icon = arg.event.extendedProps.icon as string | undefined;
-  const service = arg.event.extendedProps.service as Service;
-  return (
-    <div className="flex w-full items-center gap-1 overflow-hidden px-1.5">
-      {icon && <span className="shrink-0 text-[10px] leading-none">{icon}</span>}
-      {arg.timeText && (
-        <span className="shrink-0 text-[10px] font-bold tabular-nums">
-          {arg.timeText}
+    const renderEventContent = (arg: EventContentArg) => {
+    const icon = arg.event.extendedProps.icon as string | undefined;
+    return (
+      <div className="flex w-full items-center gap-1 overflow-hidden px-1.5">
+        {icon && <span className="shrink-0 text-[10px] leading-none">{icon}</span>}
+        {arg.timeText && (
+          <span className="shrink-0 text-[10px] font-bold tabular-nums">
+            {arg.timeText}
+          </span>
+        )}
+        <span className="truncate text-[11px] font-semibold leading-tight">
+          {arg.event.title}
         </span>
-      )}
-      <span className="truncate text-[11px] font-semibold leading-tight">
-        {arg.event.title}
-      </span>
-    </div>
-  );
-};
+      </div>
+    );
+  };
 
   return (
     <AppLayout title="Cronograma" subtitle="Servicios y asignaciones del equipo">
