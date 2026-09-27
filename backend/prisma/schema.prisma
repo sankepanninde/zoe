@@ -1,8 +1,3 @@
-// ===========================================
-// ZOE — Schema de Base de Datos
-// Multi-tenant SaaS para iglesias
-// ===========================================
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,7 +9,6 @@ datasource db {
 
 // ===========================================
 // TENANT: Iglesia
-// Cada iglesia es un "tenant" aislado
 // ===========================================
 model Church {
   id        String   @id @default(cuid())
@@ -28,7 +22,6 @@ model Church {
   logoUrl   String?
   active    Boolean  @default(true)
 
-  // Suscripción (se detalla en Fase 2)
   plan             Plan     @default(FREE)
   trialEndsAt      DateTime?
   subscriptionId   String?
@@ -69,7 +62,7 @@ model User {
   avatarUrl    String?
 
   role         Role     @default(TECHNICIAN)
-  position     String?  // "FOH", "Monitores", "Streaming", etc.
+  position     String?
   active       Boolean  @default(true)
   lastLoginAt  DateTime?
 
@@ -87,14 +80,14 @@ model User {
 }
 
 enum Role {
-  SUPER_ADMIN   // Dueño del SaaS (tú)
-  ADMIN         // Líder general de la iglesia
-  LEADER        // Líder del ministerio
-  TECHNICIAN    // Técnico
+  SUPER_ADMIN
+  ADMIN
+  LEADER
+  TECHNICIAN
 }
 
 // ===========================================
-// REFRESH TOKENS (sesiones persistentes)
+// REFRESH TOKENS
 // ===========================================
 model RefreshToken {
   id         String   @id @default(cuid())
@@ -118,7 +111,6 @@ model RefreshToken {
 
 // ===========================================
 // TIPOS DE SERVICIO
-// Ej: Culto General, Damas, Jóvenes, Ensayo
 // ===========================================
 model ServiceType {
   id          String   @id @default(cuid())
@@ -128,7 +120,7 @@ model ServiceType {
   name        String
   description String?
   color       String   @default("#6366f1")
-  icon        String?  // emoji o nombre de ícono
+  icon        String?
   active      Boolean  @default(true)
 
   createdAt   DateTime @default(now())
@@ -141,7 +133,7 @@ model ServiceType {
 }
 
 // ===========================================
-// SERVICIOS (eventos agendados)
+// SERVICIOS
 // ===========================================
 model Service {
   id            String        @id @default(cuid())
@@ -151,12 +143,21 @@ model Service {
   serviceTypeId String
   serviceType   ServiceType   @relation(fields: [serviceTypeId], references: [id])
 
-  title         String?       // opcional, si quieres ponerle nombre específico
-  date          DateTime      // fecha del servicio
-  startTime     String        // "19:00"
-  endTime       String        // "21:00"
+  title         String?
+  date          DateTime
+  startTime     String
+  endTime       String
   location      String?
   notes         String?
+
+  // ===========================================
+  // CAMPOS ESPECÍFICOS PARA EL MINISTERIO DE SONIDO
+  // ===========================================
+  soundCheckTime String?
+  sceneName      String?
+  patchName      String?
+  inputListCount Int?
+  setlistUrl     String?
 
   status        ServiceStatus @default(PENDING)
 
@@ -177,7 +178,7 @@ enum ServiceStatus {
 }
 
 // ===========================================
-// ASIGNACIONES (técnicos asignados a servicios)
+// ASIGNACIONES
 // ===========================================
 model Assignment {
   id          String            @id @default(cuid())
@@ -187,7 +188,7 @@ model Assignment {
   userId      String
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  position    String            // "FOH", "Monitores", "Streaming"
+  position    String
   status      AssignmentStatus  @default(PENDING)
   confirmedAt DateTime?
   notes       String?
@@ -207,7 +208,7 @@ enum AssignmentStatus {
 }
 
 // ===========================================
-// DISPONIBILIDAD (días que NO puede servir)
+// DISPONIBILIDAD
 // ===========================================
 model Availability {
   id         String   @id @default(cuid())
@@ -227,7 +228,7 @@ model Availability {
 }
 
 // ===========================================
-// AUDIT LOG (auditoría de acciones críticas)
+// AUDIT LOG
 // ===========================================
 model AuditLog {
   id         String   @id @default(cuid())
@@ -237,10 +238,10 @@ model AuditLog {
   userId     String?
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  action     String   // "CREATE_SERVICE", "UPDATE_ASSIGNMENT", "LOGIN_SUCCESS", etc.
-  entity     String?  // "Service", "Assignment", "User"
+  action     String
+  entity     String?
   entityId   String?
-  metadata   Json?    // datos extra (cambios, IP, etc.)
+  metadata   Json?
   ipAddress  String?
   userAgent  String?
 

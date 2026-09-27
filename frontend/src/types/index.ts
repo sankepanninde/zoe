@@ -84,6 +84,14 @@ export interface Service {
   endTime: string;
   location?: string | null;
   notes?: string | null;
+
+  // Campos de sonido
+  soundCheckTime?: string | null;
+  sceneName?: string | null;
+  patchName?: string | null;
+  inputListCount?: number | null;
+  setlistUrl?: string | null;
+
   status: ServiceStatus;
   assignments: ServiceAssignment[];
   createdAt: string;

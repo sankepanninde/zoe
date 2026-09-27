@@ -101,3 +101,13 @@ export async function updateStatusHandler(
   );
   return reply.send({ service: svc });
 }
+export async function listMineHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const user = requireUser(request, reply);
+  if (!user) return;
+
+  const services = await service.listMyServices(user.churchId, user.id);
+  return reply.send({ services });
+}
