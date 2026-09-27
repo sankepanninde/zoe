@@ -4,20 +4,17 @@ import { toast } from 'sonner';
 import { updateAssignment } from '@/lib/services.api';
 import { getApiError } from '@/lib/api';
 import type { Service } from '@/types';
-import { cn } from '@/lib/utils';
 
 interface NextShiftCardProps {
   service: Service;
   userId: string;
   onRefresh: () => void;
-  onRequestReplace: () => void;
 }
 
 export function NextShiftCard({
   service,
   userId,
   onRefresh,
-  onRequestReplace,
 }: NextShiftCardProps) {
   const myAssignment = service.assignments.find((a) => a.userId === userId);
   if (!myAssignment) return null;
@@ -45,15 +42,10 @@ export function NextShiftCard({
   const dateCapitalized =
     fullDate.charAt(0).toUpperCase() + fullDate.slice(1);
 
-  const startHour = parseInt(service.startTime.split(':')[0] ?? '0', 10);
-  const isFirst = startHour < 14;
   const arrivalTime = service.soundCheckTime ?? service.startTime;
 
   return (
-    <section
-      aria-label="Próximo Turno Inmediato"
-      className="mb-7"
-    >
+    <section aria-label="Próximo Turno Inmediato" className="mb-7">
       <div className="glass-card flex flex-col justify-between gap-4 rounded-2xl border border-white/95 px-5 py-3.5 shadow-sm transition-all hover:border-white xl:flex-row xl:items-center">
         {/* Izquierda: indicador + info */}
         <div className="flex flex-wrap items-center gap-3.5 sm:flex-nowrap">

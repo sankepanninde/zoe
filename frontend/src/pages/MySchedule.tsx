@@ -171,7 +171,6 @@ export function MySchedule() {
             service={nextShift}
             userId={user.id}
             onRefresh={() => refetch()}
-            onRequestReplace={handleRequestReplace}
           />
         ) : (
           <div className="glass-card flex items-center justify-center rounded-2xl border border-white/95 px-5 py-4 text-sm text-slate-500">

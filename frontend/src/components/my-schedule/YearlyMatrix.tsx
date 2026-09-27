@@ -49,7 +49,6 @@ export function YearlyMatrix({
         return d.getUTCMonth() === monthIndex && d.getUTCFullYear() === year;
       });
 
-      // Agrupar por fecha
       const byDate = new Map<string, DayInfo>();
 
       monthServices.forEach((s) => {
@@ -71,12 +70,10 @@ export function YearlyMatrix({
         }
       });
 
-      // Detectar si hay días entre semana (dow != 0 && dow != 6)
       const hasWeekdaySpecials = Array.from(byDate.values()).some(
         (info) => info.dow !== 0 && info.dow !== 6
       );
 
-      // Listar TODOS los días del mes que son Sáb, Dom o días especiales
       const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0));
       const daysInMonth: DayInfo[] = [];
 
@@ -86,7 +83,6 @@ export function YearlyMatrix({
         const dateKey = d.toISOString().slice(0, 10);
         const info = byDate.get(dateKey);
 
-        // Incluir si: es Sáb, Dom, o es un día especial con servicio
         const isWeekend = dow === 0 || dow === 6;
         const isSpecial = info !== undefined && !isWeekend;
 
@@ -95,14 +91,12 @@ export function YearlyMatrix({
         }
       }
 
-      // Agrupar por semanas (emparejando sáb-dom, o incluyendo especiales)
       const weeks = new Map<
         number,
         { special?: DayInfo; sat?: DayInfo; sun?: DayInfo }
       >();
 
       daysInMonth.forEach((info) => {
-        // Determinar la semana del año (ISO)
         const d = new Date(Date.UTC(year, monthIndex, info.day));
         const weekNum = getWeekNumber(d);
 
@@ -113,10 +107,9 @@ export function YearlyMatrix({
 
         if (info.dow === 6) week.sat = info;
         else if (info.dow === 0) week.sun = info;
-        else week.special = info; // Día especial entre semana
+        else week.special = info;
       });
 
-      // Convertir a array ordenado
       const rows = Array.from(weeks.entries())
         .sort(([a], [b]) => a - b)
         .map(([, week]) => ({
@@ -143,7 +136,6 @@ export function YearlyMatrix({
         const isPastMonth =
           year < currentYear ||
           (year === currentYear && month.monthIndex < currentMonth);
-        const isFutureMonth = !isCurrentMonth && !isPastMonth;
 
         return (
           <MonthCard
@@ -151,7 +143,6 @@ export function YearlyMatrix({
             month={month}
             isCurrentMonth={isCurrentMonth}
             isPastMonth={isPastMonth}
-            isFutureMonth={isFutureMonth}
             onDayClick={onDayClick}
           />
         );
@@ -190,7 +181,6 @@ interface MonthCardProps {
   };
   isCurrentMonth: boolean;
   isPastMonth: boolean;
-  isFutureMonth: boolean;
   onDayClick: (service: Service) => void;
 }
 
@@ -198,7 +188,6 @@ function MonthCard({
   month,
   isCurrentMonth,
   isPastMonth,
-  isFutureMonth,
   onDayClick,
 }: MonthCardProps) {
   const gridCols = month.hasWeekdaySpecials ? 'grid-cols-3' : 'grid-cols-2';
@@ -206,14 +195,13 @@ function MonthCard({
   return (
     <article
       className={cn(
-        'glass-card relative flex flex-col justify-between rounded-3xl border p-4 transition-all hover:border-white group',
+        'glass-card group relative flex flex-col justify-between rounded-3xl border p-4 transition-all hover:border-white',
         isCurrentMonth
-          ? 'glass-card-active border-2 border-blue-500/40 lg:-translate-y-1 z-20'
+          ? 'glass-card-active z-20 border-2 border-blue-500/40 lg:-translate-y-1'
           : 'border-white/80',
         isPastMonth && 'opacity-90 hover:opacity-100'
       )}
     >
-      {/* Badge "Mes en curso" */}
       {isCurrentMonth && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="specular-glow flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
@@ -224,7 +212,6 @@ function MonthCard({
       )}
 
       <div>
-        {/* Header del mes */}
         <div
           className={cn(
             'mb-2.5 flex items-center justify-between border-b pb-2',
@@ -253,22 +240,19 @@ function MonthCard({
           </span>
         </div>
 
-        {/* Encabezados */}
         <div
           className={cn(
-            'grid text-center text-[11px] font-medium uppercase tracking-wider',
-            gridCols,
-            month.hasWeekdaySpecials ? 'mb-1.5' : 'mb-1.5',
+            'mb-1.5 grid text-center text-[11px] font-medium uppercase tracking-wider',
+            gridCols
           )}
         >
           {month.hasWeekdaySpecials && (
             <span className="font-semibold text-amber-700">Jue</span>
           )}
           <span className="text-slate-500">Sáb</span>
-          <span className="text-slate-700 font-semibold">Dom</span>
+          <span className="font-semibold text-slate-700">Dom</span>
         </div>
 
-        {/* Filas */}
         <div className="space-y-1.5">
           {month.rows.length === 0 ? (
             <p className="py-3 text-center text-[11px] text-slate-400">
@@ -285,17 +269,24 @@ function MonthCard({
                 )}
               >
                 {month.hasWeekdaySpecials && (
-                  <DayCell info={row.special} onClick={onDayClick} variant="special" />
+                  <DayCell
+                    info={row.special}
+                    onClick={onDayClick}
+                    variant="special"
+                  />
                 )}
                 <DayCell info={row.sat} onClick={onDayClick} variant="normal" />
-                <DayCell info={row.sun} onClick={onDayClick} variant="highlight" />
+                <DayCell
+                  info={row.sun}
+                  onClick={onDayClick}
+                  variant="highlight"
+                />
               </div>
             ))
           )}
         </div>
       </div>
 
-      {/* Footer */}
       <div
         className={cn(
           'mt-3 flex items-center justify-between border-t pt-2 text-[11px]',
@@ -341,7 +332,9 @@ function DayCell({ info, onClick, variant }: DayCellProps) {
 
   if (!info.service) {
     return (
-      <span className="py-1 text-sm font-normal text-slate-400">{info.day}</span>
+      <span className="py-1 text-sm font-normal text-slate-400">
+        {info.day}
+      </span>
     );
   }
 
@@ -379,7 +372,6 @@ function DayCell({ info, onClick, variant }: DayCellProps) {
         )}
       </button>
 
-      {/* Tooltip */}
       <div className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-white bg-white/95 px-3 py-1.5 opacity-0 shadow-xl backdrop-blur-xl transition-opacity group-hover/day:opacity-100">
         <span className="text-[11px] font-semibold text-slate-800">
           {isFirst ? '1.er' : '2.º'} Servicio •{' '}
