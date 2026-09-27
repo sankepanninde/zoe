@@ -9,6 +9,11 @@ export interface CreateServicePayload {
   endTime: string;
   location?: string | null;
   notes?: string | null;
+  soundCheckTime?: string | null;
+  sceneName?: string | null;
+  patchName?: string | null;
+  inputListCount?: number | null;
+  setlistUrl?: string | null;
 }
 
 export type UpdateServicePayload = Partial<CreateServicePayload>;
@@ -109,4 +114,9 @@ export async function deleteAssignment(
   assignmentId: string
 ): Promise<void> {
   await api.delete(`/services/${serviceId}/assignments/${assignmentId}`);
+}
+
+export async function listMyServices(): Promise<Service[]> {
+  const { data } = await api.get<{ services: Service[] }>('/services/me');
+  return data.services;
 }

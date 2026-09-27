@@ -1,7 +1,8 @@
+@import './styles/fullcalendar.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import './styles/fullcalendar.css';
 
 @layer base {
   :root {
@@ -112,4 +113,103 @@
   .zoe-label {
     @apply mb-1.5 block text-sm font-medium text-foreground;
   }
+}
+/* ===========================================
+   SOUND SCHEDULE — Estética Spatial Daylight
+   =========================================== */
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-size: 20px;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.material-symbols-outlined.fill {
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+.glass-sheen {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.65) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 10px 30px -5px rgba(148, 163, 184, 0.15),
+    0 1px 3px 0 rgba(0, 0, 0, 0.02);
+}
+
+.glass-sheen:hover {
+  box-shadow:
+    0 12px 40px 0 rgba(148, 163, 184, 0.2),
+    0 2px 4px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dock-sheen {
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 16px 40px -8px rgba(100, 116, 139, 0.16);
+}
+
+.sound-schedule-body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+/* ===========================================
+   MY SCHEDULE — Spatial Daylight Optics
+   =========================================== */
+
+.glass-dock {
+  background: rgba(255, 255, 255, 0.70);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  box-shadow:
+    0 20px 40px -12px rgba(100, 116, 139, 0.18),
+    0 2px 10px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    0 12px 32px -8px rgba(148, 163, 184, 0.15),
+    0 1px 0 rgba(255, 255, 255, 0.95) inset;
+}
+
+.glass-card-active {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  box-shadow:
+    0 16px 36px -6px rgba(37, 99, 235, 0.18),
+    0 0 0 2px rgba(37, 99, 235, 0.4),
+    0 1px 0 rgba(255, 255, 255, 1) inset;
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow:
+    0 4px 14px -2px rgba(148, 163, 184, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.specular-glow {
+  box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.35);
+}
+
+.ambient-glow {
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(219, 234, 254, 0.6) 0%,
+    rgba(248, 250, 255, 0) 70%
+  );
 }

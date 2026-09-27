@@ -6,6 +6,7 @@ export async function servicesRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authMiddleware);
 
   app.get('/', controller.listHandler);
+  app.get('/me', controller.listMineHandler);
   app.get('/:id', controller.getHandler);
   app.post('/', controller.createHandler);
   app.patch('/:id', controller.updateHandler);

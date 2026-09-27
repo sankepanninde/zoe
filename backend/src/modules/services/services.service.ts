@@ -60,7 +60,6 @@ export async function getService(churchId: string, id: string) {
 }
 
 export async function createService(churchId: string, input: CreateServiceInput) {
-  // Verificar que el serviceType exista y sea de la misma iglesia
   const typeExists = await prisma.serviceType.findFirst({
     where: { id: input.serviceTypeId, churchId, active: true },
   });
@@ -80,6 +79,11 @@ export async function createService(churchId: string, input: CreateServiceInput)
       endTime: input.endTime,
       location: input.location ?? null,
       notes: input.notes ?? null,
+      soundCheckTime: input.soundCheckTime ?? null,
+      sceneName: input.sceneName ?? null,
+      patchName: input.patchName ?? null,
+      inputListCount: input.inputListCount ?? null,
+      setlistUrl: input.setlistUrl ?? null,
     },
     include: {
       serviceType: {
@@ -96,7 +100,6 @@ export async function updateService(
 ) {
   await getService(churchId, id);
 
-  // Si cambia el serviceTypeId, verificar que exista
   if (input.serviceTypeId) {
     const typeExists = await prisma.serviceType.findFirst({
       where: { id: input.serviceTypeId, churchId, active: true },
@@ -118,6 +121,11 @@ export async function updateService(
       ...(input.endTime !== undefined && { endTime: input.endTime }),
       ...(input.location !== undefined && { location: input.location }),
       ...(input.notes !== undefined && { notes: input.notes }),
+      ...(input.soundCheckTime !== undefined && { soundCheckTime: input.soundCheckTime }),
+      ...(input.sceneName !== undefined && { sceneName: input.sceneName }),
+      ...(input.patchName !== undefined && { patchName: input.patchName }),
+      ...(input.inputListCount !== undefined && { inputListCount: input.inputListCount }),
+      ...(input.setlistUrl !== undefined && { setlistUrl: input.setlistUrl }),
     },
     include: {
       serviceType: {
@@ -149,5 +157,28 @@ export async function updateServiceStatus(
   return prisma.service.update({
     where: { id },
     data: { status },
+  });
+}
+export async function listMyServices(churchId: string, userId: string) {
+  return prisma.service.findMany({
+    where: {
+      churchId,
+      assignments: {
+        some: { userId },
+      },
+    },
+    include: {
+      serviceType: {
+        select: { id: true, name: true, color: true, icon: true },
+      },
+      assignments: {
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, position: true },
+          },
+        },
+      },
+    },
+    orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
   });
 }

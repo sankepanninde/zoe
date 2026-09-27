@@ -6,7 +6,8 @@ import { useAuth } from '@/stores/auth.store';
 import { Login } from '@/pages/Login';
 import { Register } from '@/pages/Register';
 import { Dashboard } from '@/pages/Dashboard';
-import { Calendar } from '@/pages/Calendar';
+import { SoundSchedule } from '@/pages/SoundSchedule';
+import { MySchedule } from '@/pages/MySchedule';
 import { Team } from '@/pages/Team';
 import { Availability } from '@/pages/Availability';
 import { Settings } from '@/pages/Settings';
@@ -52,6 +53,26 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   if (user) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/login" replace />;
+
+  // Si es técnico, redirigir a su vista personal
+  if (user.role === 'TECHNICIAN') {
+    return <Navigate to="/my-schedule" replace />;
+  }
+
+  return <>{children}</>;
+}
 
 function AppRoutes() {
   const { loadUser } = useAuth();
@@ -89,9 +110,9 @@ function AppRoutes() {
       <Route
         path="/calendar"
         element={
-          <ProtectedRoute>
-            <Calendar />
-          </ProtectedRoute>
+          <AdminRoute>
+            <SoundSchedule />
+          </AdminRoute>
         }
       />
       <Route
@@ -99,6 +120,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Team />
+          </ProtectedRoute>
+        }
+      />
+            <Route
+        path="/my-schedule"
+        element={
+          <ProtectedRoute>
+            <MySchedule />
           </ProtectedRoute>
         }
       />
