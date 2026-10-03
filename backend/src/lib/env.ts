@@ -11,14 +11,14 @@ const envSchema = z.object({
 
   DATABASE_URL: z.string().url(),
 
-  JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET debe tener al menos 32 caracteres'),
-  JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET debe tener al menos 32 caracteres'),
+  JWT_ACCESS_SECRET: z.string().min(32).default('zoe-jwt-access-secret-fallback-dev-key-do-not-use-in-production'),
+  JWT_REFRESH_SECRET: z.string().min(32).default('zoe-jwt-refresh-secret-fallback-dev-key-do-not-use-in-production'),
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
 
-  COOKIE_SECRET: z.string().min(32, 'COOKIE_SECRET debe tener al menos 32 caracteres'),
+  COOKIE_SECRET: z.string().min(32).default('zoe-cookie-secret-fallback-dev-key-do-not-use-in-production'),
   COOKIE_DOMAIN: z.string().default('localhost'),
   COOKIE_SECURE: z
     .string()
