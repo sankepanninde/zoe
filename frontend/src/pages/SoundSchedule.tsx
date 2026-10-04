@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Users, Download } from 'lucide-react';
-import { AppDock } from '@/components/layout/AppDock';
 import { SoundMetrics } from '@/components/sound/SoundMetrics';
 import { WeeklyView } from '@/components/sound/WeeklyView';
 import { SoundHeader, type ViewMode } from '@/components/sound/SoundHeader';
