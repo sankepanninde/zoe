@@ -7,6 +7,7 @@ import { Login } from '@/pages/Login';
 import { Register } from '@/pages/Register';
 import { Dashboard } from '@/pages/Dashboard';
 import { SoundSchedule } from '@/pages/SoundSchedule';
+import { SundaysAdmin } from '@/pages/SundaysAdmin';
 import { MySchedule } from '@/pages/MySchedule';
 import { Team } from '@/pages/Team';
 import { Availability } from '@/pages/Availability';
@@ -112,6 +113,14 @@ function AppRoutes() {
         element={
           <AdminRoute>
             <SoundSchedule />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/calendar/sundays"
+        element={
+          <AdminRoute>
+            <SundaysAdmin />
           </AdminRoute>
         }
       />

@@ -111,3 +111,14 @@ export async function listMineHandler(
   const services = await service.listMyServices(user.churchId, user.id);
   return reply.send({ services });
 }
+export async function seedYearHandler(
+  request: FastifyRequest<{ Body: { year?: number } }>,
+  reply: FastifyReply
+) {
+  const user = requireAdmin(request, reply);
+  if (!user) return;
+
+  const year = request.body?.year ?? new Date().getFullYear();
+  const result = await service.seedYearSundays(user.churchId, year);
+  return reply.send(result);
+}

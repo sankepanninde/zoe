@@ -120,3 +120,19 @@ export async function listMyServices(): Promise<Service[]> {
   const { data } = await api.get<{ services: Service[] }>('/services/me');
   return data.services;
 }
+// ===========================================
+// SEED: Domingos del año
+// ===========================================
+
+export interface SeedYearResult {
+  year: number;
+  sundaysCount: number;
+  servicesCreated: number;
+  servicesSkipped: number;
+  serviceTypeId: string;
+}
+
+export async function seedYear(year: number): Promise<SeedYearResult> {
+  const { data } = await api.post<SeedYearResult>('/services/seed-year', { year });
+  return data;
+}
