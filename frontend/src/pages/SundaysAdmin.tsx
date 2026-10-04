@@ -365,7 +365,6 @@ interface SundayRowProps {
 }
 
 function SundayRow({
-  dateKey,
   dateObj,
   services,
   assignedCount,
@@ -377,9 +376,6 @@ function SundayRow({
   const monthShort = new Intl.DateTimeFormat('es-CO', { month: 'short' })
     .format(dateObj)
     .replace('.', '');
-
-  const isComplete = assignedCount === totalCount;
-  const isVacant = assignedCount === 0;
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/40 p-3 transition hover:border-blue-200 hover:bg-blue-50/30 md:flex-row md:items-center md:gap-4">
