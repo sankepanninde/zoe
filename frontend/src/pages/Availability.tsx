@@ -1,5 +1,4 @@
 import { AppLayout } from '@/components/layout/AppLayout';
-import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 export function Availability() {
   return (
