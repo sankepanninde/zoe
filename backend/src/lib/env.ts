@@ -24,6 +24,12 @@ const envSchema = z.object({
     .string()
     .transform((v) => v === 'true')
     .default('false'),
+  // ===========================================
+  // EMAIL (Resend)
+  // ===========================================
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM_EMAIL: z.string().default('Zoe <onboarding@resend.dev>'),
+  FRONTEND_URL: z.string().default('http://localhost:5173'),
 });
 
 const parsed = envSchema.safeParse(process.env);
