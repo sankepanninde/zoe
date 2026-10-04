@@ -12,6 +12,7 @@ import { MySchedule } from '@/pages/MySchedule';
 import { Team } from '@/pages/Team';
 import { Availability } from '@/pages/Availability';
 import { Settings } from '@/pages/Settings';
+import { AppShell } from '@/components/layout/AppShell';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -100,62 +101,69 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/calendar"
-        element={
-          <AdminRoute>
-            <SoundSchedule />
-          </AdminRoute>
-        }
-      />
-      <Route
-        path="/calendar/sundays"
-        element={
-          <AdminRoute>
-            <SundaysAdmin />
-          </AdminRoute>
-        }
-      />
-      <Route
-        path="/team"
-        element={
-          <ProtectedRoute>
-            <Team />
-          </ProtectedRoute>
-        }
-      />
-            <Route
-        path="/my-schedule"
-        element={
-          <ProtectedRoute>
-            <MySchedule />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/availability"
-        element={
-          <ProtectedRoute>
-            <Availability />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        }
-      />
+
+      {/* ============================================ */}
+      {/* RUTAS CON LAYOUT (AppDock + MobileBottomNav) */}
+      {/* ============================================ */}
+      <Route element={<AppShell />}>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/calendar"
+          element={
+            <AdminRoute>
+              <SoundSchedule />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/calendar/sundays"
+          element={
+            <AdminRoute>
+              <SundaysAdmin />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/team"
+          element={
+            <ProtectedRoute>
+              <Team />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-schedule"
+          element={
+            <ProtectedRoute>
+              <MySchedule />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/availability"
+          element={
+            <ProtectedRoute>
+              <Availability />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

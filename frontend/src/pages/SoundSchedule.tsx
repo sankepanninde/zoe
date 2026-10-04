@@ -220,9 +220,7 @@ const handleNext = () => {
 
   return (
     <div className="sound-schedule-body flex min-h-screen bg-[#F8FAFC] text-slate-800 antialiased">
-        <AppDock />
-
-      <main className="mx-auto w-full max-w-[1480px] flex-1 px-4 py-6 transition-all md:px-8 md:py-8 lg:py-10 lg:pl-24 lg:pr-10">
+     <main className="mx-auto w-full max-w-[1480px] flex-1 px-4 pt-6 pb-28 transition-all md:px-8 md:pt-8 md:pb-28 lg:py-10 lg:pl-24 lg:pr-10">
         <SoundHeader
           churchName={user?.church?.name}
           currentLabel={currentLabel}

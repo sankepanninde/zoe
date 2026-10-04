@@ -19,6 +19,7 @@ import { listUsers, deleteUser } from '@/lib/users.api';
 import { getApiError } from '@/lib/api';
 import { cn, getInitials } from '@/lib/utils';
 import type { User, UserRole } from '@/types';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 const roleLabels: Record<UserRole, string> = {
   SUPER_ADMIN: 'Super Admin',

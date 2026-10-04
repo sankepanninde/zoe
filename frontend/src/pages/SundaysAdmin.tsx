@@ -10,7 +10,6 @@ import {
   Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { AppDock } from '@/components/layout/AppDock';
 import { ServiceModal } from '@/components/calendar/ServiceModal';
 import { listServices, listServiceTypes, seedYear } from '@/lib/services.api';
 import { useAuth } from '@/stores/auth.store';
@@ -153,10 +152,8 @@ export function SundaysAdmin() {
 
   // ============ RENDER ============
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] text-slate-800 antialiased">
-      <AppDock />
-
-      <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 md:px-8 md:py-8 lg:py-10 lg:pl-24 lg:pr-10">
+        <div className="flex min-h-screen bg-[#F8FAFC] text-slate-800 antialiased">
+      <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 pt-6 pb-28 md:px-8 md:pt-8 md:pb-28 lg:py-10 lg:pl-24 lg:pr-10">
         {/* ============ HEADER ============ */}
         <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
