@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Loader2, Calendar as CalendarIcon } from 'lucide-react';
-import { AppDock } from '@/components/layout/AppDock';import { YearlyMatrix } from '@/components/my-schedule/YearlyMatrix';
 import { NextShiftCard } from '@/components/my-schedule/NextShiftCard';
 import { ReplaceRequestModal } from '@/components/my-schedule/ReplaceRequestModal';
+import { YearlyMatrix } from '@/components/my-schedule/YearlyMatrix';
 import { ServiceModal } from '@/components/calendar/ServiceModal';
 import { listMyServices, listServiceTypes } from '@/lib/services.api';
 import { useAuth } from '@/stores/auth.store';
@@ -80,11 +80,8 @@ export function MySchedule() {
       <div className="pointer-events-none fixed -top-40 right-10 z-0 h-[600px] w-[600px] rounded-full bg-blue-100/40 blur-3xl" />
       <div className="pointer-events-none fixed top-1/2 -left-32 z-0 h-[500px] w-[500px] rounded-full bg-blue-100/30 blur-3xl" />
 
-      {/* Dock */}
-      <AppDock />
-
       {/* Main */}
-      <main className="relative z-10 mx-auto w-full max-w-[1580px] py-8 pr-4 pl-0 transition-all sm:pr-8 md:pl-24 lg:pl-24">        {/* ============================================ */}
+      <main className="relative z-10 mx-auto w-full max-w-[1580px] pt-8 pb-28 pr-4 pl-0 transition-all sm:pr-8 md:pl-24 lg:pl-24 lg:pb-8">
         {/* HEADER */}
         {/* ============================================ */}
         <header className="mb-6 pt-2">

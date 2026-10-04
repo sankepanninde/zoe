@@ -17,6 +17,7 @@ import { listServices, listServiceTypes } from '@/lib/services.api';
 import { listUsers } from '@/lib/users.api';
 import { cn, formatDate, getInitials } from '@/lib/utils';
 import type { Service } from '@/types';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 export function Dashboard() {
   const { user } = useAuth();
