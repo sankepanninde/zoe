@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Loader2, Calendar as CalendarIcon } from 'lucide-react';
-import { MyScheduleDock } from '@/components/my-schedule/MyScheduleDock';
-import { YearlyMatrix } from '@/components/my-schedule/YearlyMatrix';
+import { AppDock } from '@/components/layout/AppDock';import { YearlyMatrix } from '@/components/my-schedule/YearlyMatrix';
 import { NextShiftCard } from '@/components/my-schedule/NextShiftCard';
 import { ReplaceRequestModal } from '@/components/my-schedule/ReplaceRequestModal';
 import { ServiceModal } from '@/components/calendar/ServiceModal';
@@ -82,11 +81,10 @@ export function MySchedule() {
       <div className="pointer-events-none fixed top-1/2 -left-32 z-0 h-[500px] w-[500px] rounded-full bg-blue-100/30 blur-3xl" />
 
       {/* Dock */}
-      <MyScheduleDock />
+      <AppDock />
 
       {/* Main */}
-      <main className="relative z-10 mx-auto w-full max-w-[1580px] py-8 pr-4 pl-0 transition-all sm:pr-8 md:pl-28">
-        {/* ============================================ */}
+      <main className="relative z-10 mx-auto w-full max-w-[1580px] py-8 pr-4 pl-0 transition-all sm:pr-8 md:pl-24 lg:pl-24">        {/* ============================================ */}
         {/* HEADER */}
         {/* ============================================ */}
         <header className="mb-6 pt-2">

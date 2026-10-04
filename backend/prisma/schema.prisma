@@ -160,6 +160,7 @@ model Service {
   setlistUrl     String?
 
   status        ServiceStatus @default(PENDING)
+  isGenerated   Boolean       @default(false)
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt

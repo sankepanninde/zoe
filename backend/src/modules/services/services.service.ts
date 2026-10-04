@@ -182,3 +182,87 @@ export async function listMyServices(churchId: string, userId: string) {
     orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
   });
 }
+// ===========================================
+// SEED: Generar domingos del año
+// ===========================================
+
+const SUNDAY_SLOTS = [
+  { title: 'Servicio Dominical — 1er Turno', startTime: '07:00', endTime: '09:45' },
+  { title: 'Servicio Dominical — 2do Turno', startTime: '10:00', endTime: '12:45' },
+];
+
+export async function seedYearSundays(churchId: string, year: number) {
+  // 1. Buscar (o crear) el tipo de servicio "Culto Dominical"
+  let dominicalType = await prisma.serviceType.findFirst({
+    where: { churchId, name: 'Culto Dominical' },
+  });
+
+  if (!dominicalType) {
+    dominicalType = await prisma.serviceType.create({
+      data: {
+        churchId,
+        name: 'Culto Dominical',
+        description: 'Cultos regulares del domingo',
+        color: '#3B82F6',
+        icon: 'church',
+        active: true,
+      },
+    });
+  }
+
+  // 2. Calcular todos los domingos del año
+  const sundays: Date[] = [];
+  const d = new Date(Date.UTC(year, 0, 1));
+  while (d.getUTCDay() !== 0) d.setUTCDate(d.getUTCDate() + 1);
+
+  while (d.getUTCFullYear() === year) {
+    sundays.push(new Date(d));
+    d.setUTCDate(d.getUTCDate() + 7);
+  }
+
+  // 3. Ver cuáles ya existen (idempotente)
+  const existing = await prisma.service.findMany({
+    where: {
+      churchId,
+      isGenerated: true,
+      date: {
+        gte: new Date(Date.UTC(year, 0, 1)),
+        lt: new Date(Date.UTC(year + 1, 0, 1)),
+      },
+    },
+    select: { date: true, startTime: true },
+  });
+
+  const existingKeys = new Set(
+    existing.map((s) => `${s.date.toISOString().slice(0, 10)}|${s.startTime}`)
+  );
+
+  // 4. Crear los que falten
+  const toCreate = sundays.flatMap((sunday) => {
+    const dateKey = sunday.toISOString().slice(0, 10);
+    return SUNDAY_SLOTS
+      .filter((slot) => !existingKeys.has(`${dateKey}|${slot.startTime}`))
+      .map((slot) => ({
+        churchId,
+        serviceTypeId: dominicalType!.id,
+        title: slot.title,
+        date: new Date(`${dateKey}T00:00:00.000Z`),
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        status: 'PENDING' as const,
+        isGenerated: true,
+      }));
+  });
+
+  if (toCreate.length > 0) {
+    await prisma.service.createMany({ data: toCreate });
+  }
+
+  return {
+    year,
+    sundaysCount: sundays.length,
+    servicesCreated: toCreate.length,
+    servicesSkipped: sundays.length * 2 - toCreate.length,
+    serviceTypeId: dominicalType.id,
+  };
+}

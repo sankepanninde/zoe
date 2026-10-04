@@ -11,10 +11,10 @@ interface YearlyMatrixProps {
 
 interface DayInfo {
   day: number;
+  dow: number;
   service?: Service;
   assignment?: ServiceAssignment;
   isFirstShift?: boolean;
-  dow: number; // 0=Dom, 6=Sáb, otros=días especiales
 }
 
 const MONTH_NAMES = [
@@ -32,6 +32,16 @@ const MONTH_NAMES = [
   'Diciembre',
 ];
 
+const DOW_LABELS: Record<number, string> = {
+  0: 'Dom',
+  1: 'Lun',
+  2: 'Mar',
+  3: 'Mié',
+  4: 'Jue',
+  5: 'Vie',
+  6: 'Sáb',
+};
+
 export function YearlyMatrix({
   year,
   services,
@@ -44,85 +54,74 @@ export function YearlyMatrix({
 
   const monthsData = useMemo(() => {
     return MONTH_NAMES.map((monthName, monthIndex) => {
+      // Servicios de este mes
       const monthServices = services.filter((s) => {
         const d = new Date(s.date);
         return d.getUTCMonth() === monthIndex && d.getUTCFullYear() === year;
       });
 
-      const byDate = new Map<string, DayInfo>();
+      // Detectar días de la semana activos
+      const activeDows = new Set<number>();
+      const servicesByDate = new Map<string, Service>();
 
       monthServices.forEach((s) => {
-        const dateObj = new Date(s.date);
-        const dow = dateObj.getUTCDay();
-        const dateKey = s.date.split('T')[0]!;
-        const hour = parseInt(s.startTime.split(':')[0] ?? '0', 10);
-        const isFirstShift = hour < 14;
-        const assignment = s.assignments.find((a) => a.userId === userId);
-
-        if (!byDate.has(dateKey)) {
-          byDate.set(dateKey, {
-            day: dateObj.getUTCDate(),
-            service: s,
-            assignment,
-            isFirstShift,
-            dow,
-          });
-        }
+        const d = new Date(s.date);
+        activeDows.add(d.getUTCDay());
+        const key = s.date.split('T')[0]!;
+        servicesByDate.set(key, s);
       });
 
-      const hasWeekdaySpecials = Array.from(byDate.values()).some(
-        (info) => info.dow !== 0 && info.dow !== 6
-      );
+      // Columnas dinámicas: días entre semana activos + Sáb + Dom
+      const extraDows = [1, 2, 3, 4, 5].filter((d) => activeDows.has(d));
+      const columns: number[] = [...extraDows, 6, 0];
 
-      const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0));
-      const daysInMonth: DayInfo[] = [];
+      // Listar días del mes a mostrar
+      const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+      const allDays: DayInfo[] = [];
 
-      for (let day = 1; day <= lastDay.getUTCDate(); day++) {
+      for (let day = 1; day <= lastDay; day++) {
         const d = new Date(Date.UTC(year, monthIndex, day));
         const dow = d.getUTCDay();
-        const dateKey = d.toISOString().slice(0, 10);
-        const info = byDate.get(dateKey);
+        const key = d.toISOString().slice(0, 10);
+        const service = servicesByDate.get(key);
 
-        const isWeekend = dow === 0 || dow === 6;
-        const isSpecial = info !== undefined && !isWeekend;
+        const isBase = dow === 0 || dow === 6;
+        const isExtraWithService = extraDows.includes(dow) && service !== undefined;
 
-        if (isWeekend || isSpecial) {
-          daysInMonth.push(info ?? { day, dow });
+        if (isBase || isExtraWithService) {
+          const hour = service
+            ? parseInt(service.startTime.split(':')[0] ?? '0', 10)
+            : 0;
+          const assignment = service?.assignments.find((a) => a.userId === userId);
+
+          allDays.push({
+            day,
+            dow,
+            service,
+            assignment,
+            isFirstShift: hour < 14,
+          });
         }
       }
 
-      const weeks = new Map<
-        number,
-        { special?: DayInfo; sat?: DayInfo; sun?: DayInfo }
-      >();
-
-      daysInMonth.forEach((info) => {
+      // Agrupar en filas por semana ISO
+      const rowsMap = new Map<number, Map<number, DayInfo>>();
+      allDays.forEach((info) => {
         const d = new Date(Date.UTC(year, monthIndex, info.day));
         const weekNum = getWeekNumber(d);
-
-        if (!weeks.has(weekNum)) {
-          weeks.set(weekNum, {});
-        }
-        const week = weeks.get(weekNum)!;
-
-        if (info.dow === 6) week.sat = info;
-        else if (info.dow === 0) week.sun = info;
-        else week.special = info;
+        if (!rowsMap.has(weekNum)) rowsMap.set(weekNum, new Map());
+        rowsMap.get(weekNum)!.set(info.dow, info);
       });
 
-      const rows = Array.from(weeks.entries())
+      const rows = Array.from(rowsMap.entries())
         .sort(([a], [b]) => a - b)
-        .map(([, week]) => ({
-          special: week.special,
-          sat: week.sat,
-          sun: week.sun,
-        }));
+        .map(([, map]) => map);
 
       return {
         name: monthName,
         monthIndex,
         totalAssignments: monthServices.length,
-        hasWeekdaySpecials,
+        columns,
         rows,
       };
     });
@@ -130,29 +129,27 @@ export function YearlyMatrix({
 
   return (
     <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {monthsData.map((month) => {
-        const isCurrentMonth =
-          month.monthIndex === currentMonth && year === currentYear;
-        const isPastMonth =
-          year < currentYear ||
-          (year === currentYear && month.monthIndex < currentMonth);
-
-        return (
-          <MonthCard
-            key={month.monthIndex}
-            month={month}
-            isCurrentMonth={isCurrentMonth}
-            isPastMonth={isPastMonth}
-            onDayClick={onDayClick}
-          />
-        );
-      })}
+      {monthsData.map((month) => (
+        <MonthCard
+          key={month.monthIndex}
+          month={month}
+          year={year}
+          isCurrentMonth={
+            month.monthIndex === currentMonth && year === currentYear
+          }
+          isPastMonth={
+            year < currentYear ||
+            (year === currentYear && month.monthIndex < currentMonth)
+          }
+          onDayClick={onDayClick}
+        />
+      ))}
     </section>
   );
 }
 
 // ===========================================
-// UTILIDAD: Número de semana ISO
+// Número de semana ISO
 // ===========================================
 
 function getWeekNumber(d: Date): number {
@@ -176,9 +173,10 @@ interface MonthCardProps {
     name: string;
     monthIndex: number;
     totalAssignments: number;
-    hasWeekdaySpecials: boolean;
-    rows: Array<{ special?: DayInfo; sat?: DayInfo; sun?: DayInfo }>;
+    columns: number[];
+    rows: Array<Map<number, DayInfo>>;
   };
+  year: number;
   isCurrentMonth: boolean;
   isPastMonth: boolean;
   onDayClick: (service: Service) => void;
@@ -186,11 +184,20 @@ interface MonthCardProps {
 
 function MonthCard({
   month,
+  year,
   isCurrentMonth,
   isPastMonth,
   onDayClick,
 }: MonthCardProps) {
-  const gridCols = month.hasWeekdaySpecials ? 'grid-cols-3' : 'grid-cols-2';
+  const colCount = month.columns.length;
+  const gridCols =
+    colCount === 2
+      ? 'grid-cols-2'
+      : colCount === 3
+        ? 'grid-cols-3'
+        : colCount === 4
+          ? 'grid-cols-4'
+          : 'grid-cols-5';
 
   return (
     <article
@@ -203,7 +210,7 @@ function MonthCard({
       )}
     >
       {isCurrentMonth && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+        <div className="absolute -top-3 left-1/2 z-30 -translate-x-1/2">
           <span className="specular-glow flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
             <span className="h-1.5 w-1.5 animate-ping rounded-full bg-emerald-300" />
             Mes en Curso • Activo
@@ -212,6 +219,7 @@ function MonthCard({
       )}
 
       <div>
+        {/* Header del mes */}
         <div
           className={cn(
             'mb-2.5 flex items-center justify-between border-b pb-2',
@@ -240,53 +248,57 @@ function MonthCard({
           </span>
         </div>
 
+        {/* Encabezados dinámicos */}
         <div
           className={cn(
-            'mb-1.5 grid text-center text-[11px] font-medium uppercase tracking-wider',
+            'mb-1.5 grid text-center text-[11px] font-semibold uppercase tracking-wider',
             gridCols
           )}
         >
-          {month.hasWeekdaySpecials && (
-            <span className="font-semibold text-amber-700">Jue</span>
-          )}
-          <span className="text-slate-500">Sáb</span>
-          <span className="font-semibold text-slate-700">Dom</span>
+          {month.columns.map((dow) => (
+            <span
+              key={dow}
+              className={cn(
+                dow === 0 && 'font-bold text-slate-700',
+                dow === 6 && 'text-slate-500',
+                dow !== 0 && dow !== 6 && 'font-semibold text-amber-700'
+              )}
+            >
+              {DOW_LABELS[dow]}
+            </span>
+          ))}
         </div>
 
+        {/* Filas */}
         <div className="space-y-1.5">
           {month.rows.length === 0 ? (
             <p className="py-3 text-center text-[11px] text-slate-400">
               Sin turnos
             </p>
           ) : (
-            month.rows.map((row, rowIdx) => (
+            month.rows.map((rowMap, rowIdx) => (
               <div
                 key={rowIdx}
-                className={cn(
-                  'grid items-center gap-1 rounded-xl text-center',
-                  gridCols,
-                  row.special && 'border border-amber-300/30 bg-amber-50/25 p-0.5'
-                )}
+                className={cn('grid items-center gap-1 rounded-xl', gridCols)}
               >
-                {month.hasWeekdaySpecials && (
-                  <DayCell
-                    info={row.special}
-                    onClick={onDayClick}
-                    variant="special"
-                  />
-                )}
-                <DayCell info={row.sat} onClick={onDayClick} variant="normal" />
-                <DayCell
-                  info={row.sun}
-                  onClick={onDayClick}
-                  variant="highlight"
-                />
+                {month.columns.map((dow) => {
+                  const info = rowMap.get(dow);
+                  return (
+                    <DayCell
+                      key={dow}
+                      info={info}
+                      onClick={onDayClick}
+                      monthLabel={month.name}
+                    />
+                  );
+                })}
               </div>
             ))
           )}
         </div>
       </div>
 
+      {/* Footer del mes */}
       <div
         className={cn(
           'mt-3 flex items-center justify-between border-t pt-2 text-[11px]',
@@ -322,10 +334,10 @@ function MonthCard({
 interface DayCellProps {
   info?: DayInfo;
   onClick: (service: Service) => void;
-  variant: 'special' | 'normal' | 'highlight';
+  monthLabel: string;
 }
 
-function DayCell({ info, onClick, variant }: DayCellProps) {
+function DayCell({ info, onClick, monthLabel }: DayCellProps) {
   if (!info) {
     return <span className="py-1 text-[11px] text-slate-300">—</span>;
   }
@@ -348,19 +360,13 @@ function DayCell({ info, onClick, variant }: DayCellProps) {
       ? 'bg-blue-600 text-white shadow-sm'
       : 'bg-emerald-600 text-white shadow-sm';
 
-  const isCurrent =
-    variant === 'highlight' &&
-    info.isFirstShift &&
-    info.assignment?.status === 'CONFIRMED';
-
   return (
     <div className="group/day relative flex items-center justify-center">
       <button
         onClick={() => info.service && onClick(info.service)}
         className={cn(
-          'relative flex flex-col items-center justify-center rounded-lg py-1 text-[11px] font-semibold leading-tight transition-all hover:scale-105',
-          bgClass,
-          isCurrent && 'specular-glow font-bold'
+          'relative flex flex-col items-center justify-center rounded-lg px-1.5 py-1 text-[11px] font-semibold leading-tight transition-all hover:scale-105',
+          bgClass
         )}
       >
         <span>{info.day}</span>
@@ -372,11 +378,13 @@ function DayCell({ info, onClick, variant }: DayCellProps) {
         )}
       </button>
 
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-white bg-white/95 px-3 py-1.5 opacity-0 shadow-xl backdrop-blur-xl transition-opacity group-hover/day:opacity-100">
+      {/* Tooltip */}
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-white bg-white/95 px-3 py-1.5 opacity-0 shadow-xl backdrop-blur-xl transition-opacity group-hover/day:opacity-100">
         <span className="text-[11px] font-semibold text-slate-800">
-          {isFirst ? '1.er' : '2.º'} Servicio •{' '}
-          {info.assignment?.position.split('(')[0]?.trim() ?? 'Servicio'}
+          {monthLabel} {info.day} • {isFirst ? '1.er' : '2.º'} Servicio
+          {info.assignment && ` — ${info.assignment.position.split('(')[0]?.trim()}`}
         </span>
+        <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-b border-r border-white bg-white/95" />
       </div>
     </div>
   );

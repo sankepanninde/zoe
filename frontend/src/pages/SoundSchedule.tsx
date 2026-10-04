@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Users, Download } from 'lucide-react';
-import { SoundDock } from '@/components/sound/SoundDock';
-import { SoundHeader } from '@/components/sound/SoundHeader';
+import { AppDock } from '@/components/layout/AppDock';
 import { SoundMetrics } from '@/components/sound/SoundMetrics';
 import { WeeklyView } from '@/components/sound/WeeklyView';
-import type { ViewMode } from '@/components/sound/SoundHeader';
+import { SoundHeader, type ViewMode } from '@/components/sound/SoundHeader';
 import { SundayCard } from '@/components/sound/SundayCard';
 import { TechnicianSummaryCard } from '@/components/sound/TechnicianSummaryCard';
 import { ServiceModal } from '@/components/calendar/ServiceModal';
@@ -221,9 +220,9 @@ const handleNext = () => {
 
   return (
     <div className="sound-schedule-body flex min-h-screen bg-[#F8FAFC] text-slate-800 antialiased">
-      <SoundDock />
+        <AppDock />
 
-      <main className="mx-auto w-full max-w-[1480px] flex-1 px-4 py-6 transition-all md:px-8 md:py-8 lg:py-10 lg:pl-28 lg:pr-10">
+      <main className="mx-auto w-full max-w-[1480px] flex-1 px-4 py-6 transition-all md:px-8 md:py-8 lg:py-10 lg:pl-24 lg:pr-10">
         <SoundHeader
           churchName={user?.church?.name}
           currentLabel={currentLabel}

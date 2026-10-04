@@ -53,12 +53,12 @@ export async function registerChurchAndAdmin(
   const passwordHash = await hashPassword(input.password);
 
   // Crear church + user en una transacción
-  const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
     const church = await tx.church.create({
       data: {
         name: input.churchName,
         slug: input.churchSlug,
-        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 días de trial
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
       },
     });
 
@@ -76,7 +76,24 @@ export async function registerChurchAndAdmin(
     return { church, user };
   });
 
-  const tokens = await createSession(result.user.id, result.church.id, result.user.role, result.user.email, ctx);
+  // ===========================================
+  // AUTO-SEED: Generar domingos del año actual
+  // ===========================================
+  try {
+    const { seedYearSundays } = await import('../services/services.service.js');
+    await seedYearSundays(result.church.id, new Date().getFullYear());
+  } catch (err) {
+    // No fallar el registro si el seed falla
+    console.error('[auth] Error al generar domingos:', err);
+  }
+
+  const tokens = await createSession(
+    result.user.id,
+    result.church.id,
+    result.user.role,
+    result.user.email,
+    ctx
+  );
 
   return {
     user: {
