@@ -133,7 +133,6 @@ export function YearlyMatrix({
         <MonthCard
           key={month.monthIndex}
           month={month}
-          year={year}
           isCurrentMonth={
             month.monthIndex === currentMonth && year === currentYear
           }
@@ -176,7 +175,6 @@ interface MonthCardProps {
     columns: number[];
     rows: Array<Map<number, DayInfo>>;
   };
-  year: number;
   isCurrentMonth: boolean;
   isPastMonth: boolean;
   onDayClick: (service: Service) => void;
@@ -184,7 +182,6 @@ interface MonthCardProps {
 
 function MonthCard({
   month,
-  year,
   isCurrentMonth,
   isPastMonth,
   onDayClick,
