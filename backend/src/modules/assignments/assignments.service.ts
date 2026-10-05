@@ -32,7 +32,6 @@ export async function createAssignment(
   serviceId: string,
   input: CreateAssignmentInput
 ) {
-  // Verificar servicio
     // Verificar servicio (incluye la iglesia para el email)
   const service = await prisma.service.findFirst({
     where: { id: serviceId, churchId },

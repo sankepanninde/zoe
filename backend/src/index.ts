@@ -10,6 +10,7 @@ import { prisma } from './lib/prisma.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { churchRoutes } from './modules/church/church.routes.js';
 import { serviceTypesRoutes } from './modules/service-types/service-types.routes.js';
+import { ministriesRoutes } from './modules/ministries/ministries.routes.js';
 import { servicesRoutes } from './modules/services/services.routes.js';
 import { AuthError } from './modules/auth/auth.service.js';
 import { ZodError } from 'zod';
@@ -73,6 +74,7 @@ await app.register(serviceTypesRoutes, { prefix: '/api/service-types' });
 await app.register(servicesRoutes, { prefix: '/api/services' });
 await app.register(assignmentsRoutes, { prefix: '/api/services' });
 await app.register(usersRoutes, { prefix: '/api/users' });
+await app.register(ministriesRoutes, { prefix: '/api/ministries' });
 
 // ===========================================
 // MANEJO GLOBAL DE ERRORES

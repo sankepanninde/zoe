@@ -35,6 +35,7 @@ model Church {
   services       Service[]
   auditLogs      AuditLog[]
   refreshTokens  RefreshToken[]
+  ministries     Ministry[]
 
   @@index([slug])
   @@index([active])
@@ -73,6 +74,7 @@ model User {
   availabilities Availability[]
   refreshTokens  RefreshToken[]
   auditLogs      AuditLog[]
+  ministries     UserMinistry[]
 
   @@unique([churchId, email])
   @@index([churchId])
@@ -194,12 +196,16 @@ model Assignment {
   confirmedAt DateTime?
   notes       String?
 
+  ministryId  String?
+  ministry    Ministry?         @relation(fields: [ministryId], references: [id], onDelete: SetNull)
+
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
   @@unique([serviceId, userId])
   @@index([serviceId])
   @@index([userId])
+  @@index([ministryId])
 }
 
 enum AssignmentStatus {
@@ -253,3 +259,48 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
 }
+// ===========================================
+// MINISTERIOS
+// ===========================================
+model Ministry {
+  id        String   @id @default(cuid())
+  churchId  String
+  church    Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  name      String
+  color     String   @default("#6366f1")
+  icon      String?
+  active    Boolean  @default(true)
+  isDefault Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       UserMinistry[]
+  assignments Assignment[]
+
+  @@unique([churchId, name])
+  @@index([churchId])
+  @@index([active])
+}
+
+// ===========================================
+// USUARIO ↔ MINISTERIO (N:M)
+// ===========================================
+model UserMinistry {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ministryId String
+  ministry   Ministry @relation(fields: [ministryId], references: [id], onDelete: Cascade)
+
+  isLeader   Boolean  @default(false)
+  position   String?
+
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, ministryId])
+  @@index([userId])
+  @@index([ministryId])
+  @@index([isLeader])
+} 

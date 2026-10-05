@@ -6,28 +6,112 @@ import type {
   ChangePasswordInput,
 } from './users.schemas.js';
 
+// ===========================================
+// SELECTS REUTILIZABLES
+// ===========================================
+
 const publicUserSelect = {
   id: true,
   email: true,
   name: true,
   role: true,
   phone: true,
-  position: true,
   active: true,
   lastLoginAt: true,
   createdAt: true,
+  ministries: {
+    select: {
+      id: true,
+      isLeader: true,
+      position: true,
+      ministry: {
+        select: { id: true, name: true, color: true, icon: true },
+      },
+    },
+  },
 } as const;
 
-export async function listUsers(churchId: string, onlyActive = false) {
+// ===========================================
+// HELPERS DE PERMISOS
+// ===========================================
+
+/**
+ * ¿El usuario actual puede gestionar a este target?
+ * - ADMIN puede con cualquiera de su iglesia
+ * - LEADER solo con usuarios que compartan algún ministerio que lidera
+ */
+export async function canManageUser(
+  currentUserId: string,
+  currentRole: string,
+  churchId: string,
+  targetUserId: string
+): Promise<boolean> {
+  if (currentRole === 'ADMIN' || currentRole === 'SUPER_ADMIN') return true;
+
+  // Obtener ministerios que el current user lidera
+  const ledMinistries = await prisma.userMinistry.findMany({
+    where: { userId: currentUserId, isLeader: true },
+    select: { ministryId: true },
+  });
+  const ledIds = ledMinistries.map((m) => m.ministryId);
+  if (ledIds.length === 0) return false;
+
+  // ¿El target comparte alguno de esos ministerios?
+  const shared = await prisma.userMinistry.findFirst({
+    where: {
+      userId: targetUserId,
+      ministryId: { in: ledIds },
+    },
+  });
+  return !!shared;
+}
+
+// ===========================================
+// LIST
+// ===========================================
+
+export async function listUsers(
+  churchId: string,
+  currentUserId: string,
+  currentRole: string,
+  onlyActive = false
+) {
+  // ADMIN ve toda la iglesia
+  if (currentRole === 'ADMIN' || currentRole === 'SUPER_ADMIN') {
+    return prisma.user.findMany({
+      where: {
+        churchId,
+        ...(onlyActive && { active: true }),
+      },
+      select: publicUserSelect,
+      orderBy: [{ active: 'desc' }, { name: 'asc' }],
+    });
+  }
+
+  // LEADER solo ve usuarios de sus ministerios
+  const ledMinistries = await prisma.userMinistry.findMany({
+    where: { userId: currentUserId, isLeader: true },
+    select: { ministryId: true },
+  });
+  const ledIds = ledMinistries.map((m) => m.ministryId);
+
   return prisma.user.findMany({
     where: {
       churchId,
       ...(onlyActive && { active: true }),
+      OR: [
+        { id: currentUserId }, // siempre verse a sí mismo
+        { ministries: { some: { ministryId: { in: ledIds } } } },
+      ],
     },
     select: publicUserSelect,
     orderBy: [{ active: 'desc' }, { name: 'asc' }],
   });
 }
+
+// ===========================================
+// GET
+// ===========================================
 
 export async function getUser(churchId: string, id: string) {
   const user = await prisma.user.findFirst({
@@ -42,8 +126,12 @@ export async function getUser(churchId: string, id: string) {
   return user;
 }
 
+// ===========================================
+// CREATE
+// ===========================================
+
 export async function createUser(churchId: string, input: CreateUserInput) {
-  // Verificar que el email no exista ya en esta iglesia
+  // Verificar email único
   const exists = await prisma.user.findFirst({
     where: { churchId, email: input.email },
   });
@@ -53,21 +141,57 @@ export async function createUser(churchId: string, input: CreateUserInput) {
     throw err;
   }
 
+  // Validar que los ministerios existan en la iglesia
+  if (input.ministries.length > 0) {
+    const ids = input.ministries.map((m) => m.ministryId);
+    const found = await prisma.ministry.findMany({
+      where: { id: { in: ids }, churchId, active: true },
+      select: { id: true },
+    });
+    if (found.length !== ids.length) {
+      const err = new Error('Uno o más ministerios no son válidos');
+      (err as Error & { statusCode: number }).statusCode = 400;
+      throw err;
+    }
+  }
+
   const passwordHash = await hashPassword(input.password);
 
-  return prisma.user.create({
-    data: {
-      churchId,
-      email: input.email,
-      passwordHash,
-      name: input.name,
-      phone: input.phone ?? null,
-      role: input.role,
-      position: input.position ?? null,
-    },
-    select: publicUserSelect,
+  // Transacción: crear user + sus ministerios
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        churchId,
+        email: input.email,
+        passwordHash,
+        name: input.name,
+        phone: input.phone ?? null,
+        role: input.role,
+      },
+      select: { id: true },
+    });
+
+    if (input.ministries.length > 0) {
+      await tx.userMinistry.createMany({
+        data: input.ministries.map((m) => ({
+          userId: user.id,
+          ministryId: m.ministryId,
+          isLeader: m.isLeader,
+          position: m.position ?? null,
+        })),
+      });
+    }
+
+    return tx.user.findUnique({
+      where: { id: user.id },
+      select: publicUserSelect,
+    });
   });
 }
+
+// ===========================================
+// UPDATE
+// ===========================================
 
 export async function updateUser(
   churchId: string,
@@ -76,18 +200,60 @@ export async function updateUser(
 ) {
   await getUser(churchId, id);
 
-  return prisma.user.update({
-    where: { id },
-    data: {
-      ...(input.name !== undefined && { name: input.name }),
-      ...(input.phone !== undefined && { phone: input.phone }),
-      ...(input.role !== undefined && { role: input.role }),
-      ...(input.position !== undefined && { position: input.position }),
-      ...(input.active !== undefined && { active: input.active }),
-    },
-    select: publicUserSelect,
+  // Validar ministerios si vienen
+  if (input.ministries) {
+    const ids = input.ministries.map((m) => m.ministryId);
+    if (ids.length > 0) {
+      const found = await prisma.ministry.findMany({
+        where: { id: { in: ids }, churchId, active: true },
+        select: { id: true },
+      });
+      if (found.length !== ids.length) {
+        const err = new Error('Uno o más ministerios no son válidos');
+        (err as Error & { statusCode: number }).statusCode = 400;
+        throw err;
+      }
+    }
+  }
+
+  return prisma.$transaction(async (tx) => {
+    // Actualizar campos del user
+    await tx.user.update({
+      where: { id },
+      data: {
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.phone !== undefined && { phone: input.phone }),
+        ...(input.role !== undefined && { role: input.role }),
+        ...(input.active !== undefined && { active: input.active }),
+      },
+    });
+
+    // Si vienen ministerios, reemplazar los existentes (delete + create)
+    if (input.ministries) {
+      await tx.userMinistry.deleteMany({ where: { userId: id } });
+
+      if (input.ministries.length > 0) {
+        await tx.userMinistry.createMany({
+          data: input.ministries.map((m) => ({
+            userId: id,
+            ministryId: m.ministryId,
+            isLeader: m.isLeader,
+            position: m.position ?? null,
+          })),
+        });
+      }
+    }
+
+    return tx.user.findUnique({
+      where: { id },
+      select: publicUserSelect,
+    });
   });
 }
+
+// ===========================================
+// CHANGE PASSWORD
+// ===========================================
 
 export async function changePassword(
   churchId: string,
@@ -102,14 +268,22 @@ export async function changePassword(
     data: { passwordHash },
   });
 
-  // Revocar todos los refresh tokens del usuario por seguridad
+  // Revocar tokens
   await prisma.refreshToken.updateMany({
     where: { userId: id, revokedAt: null },
     data: { revokedAt: new Date() },
   });
 }
 
-export async function deleteUser(churchId: string, id: string, requestingUserId: string) {
+// ===========================================
+// DELETE (soft)
+// ===========================================
+
+export async function deleteUser(
+  churchId: string,
+  id: string,
+  requestingUserId: string
+) {
   if (id === requestingUserId) {
     const err = new Error('No puedes eliminarte a ti mismo');
     (err as Error & { statusCode: number }).statusCode = 400;
@@ -118,7 +292,6 @@ export async function deleteUser(churchId: string, id: string, requestingUserId:
 
   await getUser(churchId, id);
 
-  // Verificar que no sea el último admin
   const user = await prisma.user.findUnique({ where: { id } });
   if (user?.role === 'ADMIN') {
     const adminCount = await prisma.user.count({
@@ -131,10 +304,20 @@ export async function deleteUser(churchId: string, id: string, requestingUserId:
     }
   }
 
-  // Soft delete: marcar como inactivo (no eliminamos para preservar historial)
   return prisma.user.update({
     where: { id },
     data: { active: false },
     select: publicUserSelect,
   });
+}
+// ===========================================
+// HELPER PÚBLICO
+// ===========================================
+
+export async function getLedMinistryIds(userId: string): Promise<string[]> {
+  const led = await prisma.userMinistry.findMany({
+    where: { userId, isLeader: true },
+    select: { ministryId: true },
+  });
+  return led.map((m) => m.ministryId);
 }
