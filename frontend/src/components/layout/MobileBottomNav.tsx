@@ -29,6 +29,12 @@ const ALL_NAV_ITEMS: NavItem[] = [
     roles: ['ADMIN', 'LEADER', 'SUPER_ADMIN'],
   },
   {
+    to: '/team',
+    label: 'Equipo',
+    icon: 'group',
+    roles: ['ADMIN', 'LEADER', 'SUPER_ADMIN'],
+  },
+  {
     to: '/my-schedule',
     label: 'Mis Turnos',
     icon: 'assignment_turned_in',
@@ -51,7 +57,7 @@ export function MobileBottomNav() {
         <NavLink
           key={item.to}
           to={item.to}
-          end={item.to === '/' || item.to === '/calendar'}
+          end={item.to === '/' || item.to === '/calendar' || item.to === '/team'}
           className={({ isActive }) =>
             cn(
               'group relative flex min-w-[64px] flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-1.5 transition-all',

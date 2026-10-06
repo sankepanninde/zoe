@@ -28,7 +28,8 @@ export interface RegisterData {
 export const useAuth = create<AuthState>((set, get) => ({
   user: null,
   token: localStorage.getItem('zoe_access_token'),
-  loading: false,
+  // Si hay token guardado, arrancamos "cargando" hasta que /auth/me responda
+  loading: Boolean(localStorage.getItem('zoe_access_token')),
   error: null,
 
   login: async (email, password) => {

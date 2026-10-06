@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
@@ -8,17 +8,21 @@ import {
   Phone,
   Trash2,
   Edit,
-  Shield,
-  ShieldCheck,
-  User as UserIcon,
+  Crown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { UserModal } from '@/components/team/UserModal';
 import { listUsers, deleteUser } from '@/lib/users.api';
+import { listMinistries } from '@/lib/ministries.api';
 import { getApiError } from '@/lib/api';
 import { cn, getInitials } from '@/lib/utils';
 import type { User, UserRole } from '@/types';
+
+// ===========================================
+// LABELS
+// ===========================================
+
 const roleLabels: Record<UserRole, string> = {
   SUPER_ADMIN: 'Super Admin',
   ADMIN: 'Administrador',
@@ -33,36 +37,57 @@ const roleColors: Record<UserRole, string> = {
   TECHNICIAN: 'bg-success-light text-success-dark',
 };
 
+// ===========================================
+// PAGE
+// ===========================================
+
 export function Team() {
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState<string>('');
+  const [filterMinistry, setFilterMinistry] = useState<string>('');
   const [showInactive, setShowInactive] = useState(false);
 
+  // Queries
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users', showInactive],
     queryFn: () => listUsers(!showInactive),
   });
 
+  const { data: ministries = [] } = useQuery({
+    queryKey: ['ministries'],
+    queryFn: listMinistries,
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteUser(id),
     onSuccess: () => {
-      toast.success('Técnico desactivado');
+      toast.success('Usuario desactivado');
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
     onError: (err) => toast.error(getApiError(err)),
   });
 
-  const filtered = users.filter((u) => {
-    const matchesSearch =
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
-    const matchesRole = !filterRole || u.role === filterRole;
-    return matchesSearch && matchesRole;
-  });
+  // Filtros
+  const filtered = useMemo(() => {
+    return users.filter((u) => {
+      const matchesSearch =
+        u.name.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase());
 
+      const matchesRole = !filterRole || u.role === filterRole;
+
+      const matchesMinistry =
+        !filterMinistry ||
+        (u.ministries ?? []).some((um) => um.ministry.id === filterMinistry);
+
+      return matchesSearch && matchesRole && matchesMinistry;
+    });
+  }, [users, search, filterRole, filterMinistry]);
+
+  // Handlers
   const handleDelete = (user: User) => {
     if (!confirm(`¿Desactivar a ${user.name}? Podrás reactivarlo luego.`)) return;
     deleteMutation.mutate(user.id);
@@ -86,23 +111,23 @@ export function Team() {
 
   const stats = {
     total: users.length,
+    leaders: users.filter((u) => u.ministries?.some((m) => m.isLeader)).length,
     admins: users.filter((u) => u.role === 'ADMIN').length,
-    leaders: users.filter((u) => u.role === 'LEADER').length,
-    technicians: users.filter((u) => u.role === 'TECHNICIAN').length,
+    active: users.filter((u) => u.active).length,
   };
 
   return (
-    <AppLayout title="Equipo" subtitle="Técnicos y colaboradores de tu iglesia">
+    <AppLayout title="Equipo" subtitle="Personas que sirven en tu iglesia">
       <div className="space-y-5">
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard icon={Users} label="Total" value={stats.total} color="primary" />
-          <StatCard icon={Shield} label="Admins" value={stats.admins} color="purple" />
-          <StatCard icon={ShieldCheck} label="Líderes" value={stats.leaders} color="warning" />
-          <StatCard icon={UserIcon} label="Técnicos" value={stats.technicians} color="success" />
+          <StatCard label="Total" value={stats.total} tone="primary" />
+          <StatCard label="Activos" value={stats.active} tone="success" />
+          <StatCard label="Líderes" value={stats.leaders} tone="warning" />
+          <StatCard label="Admins" value={stats.admins} tone="purple" />
         </div>
 
-        {/* Barra de acciones */}
+        {/* Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-1 flex-wrap items-center gap-3">
             <div className="relative min-w-[220px] flex-1">
@@ -115,6 +140,19 @@ export function Team() {
                 className="zoe-input pl-9"
               />
             </div>
+
+            <select
+              value={filterMinistry}
+              onChange={(e) => setFilterMinistry(e.target.value)}
+              className="zoe-filter-select"
+            >
+              <option value="">Todos los ministerios</option>
+              {ministries.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
 
             <select
               value={filterRole}
@@ -140,7 +178,7 @@ export function Team() {
 
           <button onClick={handleOpenCreate} className="zoe-btn-primary">
             <Plus className="h-4 w-4" />
-            Nuevo técnico
+            Nuevo usuario
           </button>
         </div>
 
@@ -155,14 +193,16 @@ export function Team() {
               <Users className="h-6 w-6 text-primary" />
             </div>
             <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
-              {search || filterRole ? 'No hay resultados' : 'Sin técnicos todavía'}
+              {search || filterRole || filterMinistry
+                ? 'No hay resultados'
+                : 'Sin usuarios todavía'}
             </h3>
             <p className="mt-1 max-w-sm text-sm text-foreground-muted">
-              {search || filterRole
+              {search || filterRole || filterMinistry
                 ? 'Prueba con otra búsqueda o filtro.'
-                : 'Agrega a las personas que sirven en tu ministerio para poder asignarlas a los servicios.'}
+                : 'Agrega a las personas que sirven en tu iglesia.'}
             </p>
-            {!search && !filterRole && (
+            {!search && !filterRole && !filterMinistry && (
               <button onClick={handleOpenCreate} className="zoe-btn-primary mt-5">
                 <Plus className="h-4 w-4" />
                 Agregar el primero
@@ -197,22 +237,23 @@ export function Team() {
 }
 
 // ===========================================
-// COMPONENTES AUXILIARES
+// STAT CARD
 // ===========================================
 
-interface StatCardProps {
-  icon: typeof Users;
+function StatCard({
+  label,
+  value,
+  tone,
+}: {
   label: string;
   value: number;
-  color: 'primary' | 'purple' | 'warning' | 'success';
-}
-
-function StatCard({ icon: Icon, label, value, color }: StatCardProps) {
-  const colorStyles = {
+  tone: 'primary' | 'success' | 'warning' | 'purple';
+}) {
+  const tones = {
     primary: 'bg-primary/10 text-primary',
-    purple: 'bg-purple-100 text-purple-700',
-    warning: 'bg-warning-light text-warning-dark',
     success: 'bg-success-light text-success-dark',
+    warning: 'bg-warning-light text-warning-dark',
+    purple: 'bg-purple-100 text-purple-700',
   };
 
   return (
@@ -221,10 +262,10 @@ function StatCard({ icon: Icon, label, value, color }: StatCardProps) {
         <div
           className={cn(
             'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-            colorStyles[color]
+            tones[tone]
           )}
         >
-          <Icon className="h-4 w-4" />
+          <Users className="h-4 w-4" />
         </div>
         <div className="min-w-0">
           <p className="truncate text-[11px] font-medium uppercase tracking-wide text-foreground-subtle">
@@ -239,13 +280,21 @@ function StatCard({ icon: Icon, label, value, color }: StatCardProps) {
   );
 }
 
-interface UserCardProps {
+// ===========================================
+// USER CARD
+// ===========================================
+
+function UserCard({
+  user,
+  onEdit,
+  onDelete,
+}: {
   user: User;
   onEdit: () => void;
   onDelete: () => void;
-}
+}) {
+  const ministries = user.ministries ?? [];
 
-function UserCard({ user, onEdit, onDelete }: UserCardProps) {
   return (
     <div
       className={cn(
@@ -258,19 +307,18 @@ function UserCard({ user, onEdit, onDelete }: UserCardProps) {
         <div
           className={cn(
             'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-bold',
-            user.active ? 'bg-primary text-white' : 'bg-foreground-subtle/20 text-foreground-subtle'
+            user.active
+              ? 'bg-primary text-white'
+              : 'bg-foreground-subtle/20 text-foreground-subtle'
           )}
         >
           {getInitials(user.name)}
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{user.name}</p>
-          {user.position && (
-            <p className="truncate text-xs text-foreground-muted">{user.position}</p>
-          )}
           <span
             className={cn(
-              'mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+              'mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
               roleColors[user.role as UserRole]
             )}
           >
@@ -298,7 +346,32 @@ function UserCard({ user, onEdit, onDelete }: UserCardProps) {
         )}
       </div>
 
-      {/* Acciones (aparecen al hacer hover) */}
+      {/* Ministerios */}
+      {ministries.length > 0 ? (
+        <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border pt-3">
+          {ministries.map((um) => (
+            <span
+              key={um.id}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+              style={{ backgroundColor: um.ministry.color }}
+            >
+              {um.isLeader && <Crown className="h-2.5 w-2.5" />}
+              {um.ministry.name}
+              {um.position && (
+                <span className="opacity-80">· {um.position}</span>
+              )}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-3 border-t border-border pt-3">
+          <span className="text-[10px] italic text-foreground-subtle">
+            Sin ministerios asignados
+          </span>
+        </div>
+      )}
+
+      {/* Acciones */}
       <div className="mt-3 flex gap-2 border-t border-border pt-3 opacity-0 transition-opacity group-hover:opacity-100">
         <button
           onClick={onEdit}
