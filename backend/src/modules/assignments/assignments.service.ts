@@ -1,10 +1,12 @@
 import { prisma } from '../../lib/prisma.js';
+import { sendAssignmentEmail } from '../../lib/email.js';
 import type {
   CreateAssignmentInput,
   UpdateAssignmentInput,
 } from './assignments.schemas.js';
 
 export async function listAssignments(churchId: string, serviceId: string) {
+  // Verificar servicio
   const service = await prisma.service.findFirst({
     where: { id: serviceId, churchId },
   });
@@ -30,9 +32,12 @@ export async function createAssignment(
   serviceId: string,
   input: CreateAssignmentInput
 ) {
-  // Verificar servicio
+    // Verificar servicio (incluye la iglesia para el email)
   const service = await prisma.service.findFirst({
     where: { id: serviceId, churchId },
+    include: {
+      church: { select: { name: true } },
+    },
   });
   if (!service) {
     const err = new Error('Servicio no encontrado');
@@ -60,7 +65,7 @@ export async function createAssignment(
     throw err;
   }
 
-  return prisma.assignment.create({
+  const assignment = await prisma.assignment.create({
     data: {
       serviceId,
       userId: input.userId,
@@ -73,6 +78,22 @@ export async function createAssignment(
       },
     },
   });
+
+  // Enviar email de notificación (no bloquea la respuesta al cliente)
+  sendAssignmentEmail({
+    to: targetUser.email,
+    userName: targetUser.name,
+    churchName: service.church.name,
+    serviceTitle: service.title ?? 'Servicio Dominical',
+    serviceDate: service.date,
+    startTime: service.startTime,
+    endTime: service.endTime,
+    position: input.position,
+  }).catch((err) => {
+    console.error('[assignments] Error al enviar email:', err);
+  });
+
+  return assignment;
 }
 
 export async function updateAssignment(

@@ -39,6 +39,13 @@ const ALL_NAV_ITEMS: NavItem[] = [
     roles: ['TECHNICIAN', 'LEADER', 'ADMIN', 'SUPER_ADMIN'],
     badge: 'violet',
   },
+  {
+    to: '/team',
+    label: 'Equipo',
+    icon: 'group',
+    roles: ['ADMIN', 'LEADER', 'SUPER_ADMIN'],
+    badge: 'rose',
+  },
 ];
 
 const badgeColors: Record<string, string> = {

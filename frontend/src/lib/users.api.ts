@@ -1,5 +1,9 @@
 import { api } from './api';
-import type { User, UserRole } from '@/types';
+import type { User, UserRole, UserMinistryInput } from '@/types';
+
+// ===========================================
+// PAYLOADS
+// ===========================================
 
 export interface CreateUserPayload {
   name: string;
@@ -7,16 +11,20 @@ export interface CreateUserPayload {
   password: string;
   phone?: string | null;
   role: UserRole;
-  position?: string | null;
+  ministries: UserMinistryInput[];
 }
 
 export interface UpdateUserPayload {
   name?: string;
   phone?: string | null;
   role?: UserRole;
-  position?: string | null;
   active?: boolean;
+  ministries?: UserMinistryInput[];
 }
+
+// ===========================================
+// API
+// ===========================================
 
 export async function listUsers(onlyActive = false): Promise<User[]> {
   const { data } = await api.get<{ users: User[] }>('/users', {
@@ -25,14 +33,29 @@ export async function listUsers(onlyActive = false): Promise<User[]> {
   return data.users;
 }
 
+export async function getUser(id: string): Promise<User> {
+  const { data } = await api.get<{ user: User }>(`/users/${id}`);
+  return data.user;
+}
+
 export async function createUser(payload: CreateUserPayload): Promise<User> {
   const { data } = await api.post<{ user: User }>('/users', payload);
   return data.user;
 }
 
-export async function updateUser(id: string, payload: UpdateUserPayload): Promise<User> {
+export async function updateUser(
+  id: string,
+  payload: UpdateUserPayload
+): Promise<User> {
   const { data } = await api.patch<{ user: User }>(`/users/${id}`, payload);
   return data.user;
+}
+
+export async function changeUserPassword(
+  id: string,
+  password: string
+): Promise<void> {
+  await api.patch(`/users/${id}/password`, { password });
 }
 
 export async function deleteUser(id: string): Promise<void> {

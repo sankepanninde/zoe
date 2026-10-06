@@ -1,4 +1,31 @@
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'LEADER' | 'TECHNICIAN';
+// ===========================================
+// MINISTERIOS
+// ===========================================
+
+export interface Ministry {
+  id: string;
+  name: string;
+  color: string;
+  icon: string | null;
+  active: boolean;
+  isDefault: boolean;
+  createdAt?: string;
+  _count?: { users: number };
+}
+
+export interface UserMinistry {
+  id: string;
+  isLeader: boolean;
+  position: string | null;
+  ministry: Pick<Ministry, 'id' | 'name' | 'color' | 'icon'>;
+}
+
+export interface UserMinistryInput {
+  ministryId: string;
+  isLeader: boolean;
+  position?: string | null;
+}
 export type Plan = 'FREE' | 'BASIC' | 'STANDARD' | 'PRO';
 export type ServiceStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 export type AssignmentStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED';
@@ -27,6 +54,7 @@ export interface User {
   position?: string | null;
   avatarUrl?: string | null;
   active: boolean;
+  ministries?: UserMinistry[];   // ← NUEVA LÍNEA
   lastLoginAt?: string | null;
   createdAt?: string;
   church?: Church;
