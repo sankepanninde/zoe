@@ -22,7 +22,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     to: '/calendar',
     label: 'Cronograma',
     icon: 'equalizer',
-    roles: ['ADMIN', 'LEADER', 'SUPER_ADMIN'],
+    roles: ['ADMIN', 'LEADER', 'TECHNICIAN', 'SUPER_ADMIN'],
     badge: 'emerald',
   },
   {

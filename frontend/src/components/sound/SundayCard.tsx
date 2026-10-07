@@ -4,6 +4,7 @@ import { cn, getInitials } from '@/lib/utils';
 interface SundayCardProps {
   date: Date;
   services: Service[];
+  readOnly?: boolean;
   onServiceClick: (service: Service) => void;
   onAddService: (date: string) => void;
   isNextSunday?: boolean;
@@ -12,6 +13,7 @@ interface SundayCardProps {
 export function SundayCard({
   date,
   services,
+  readOnly = false,
   onServiceClick,
   onAddService,
   isNextSunday,
@@ -120,16 +122,20 @@ export function SundayCard({
       {/* Grid: Mañana | Tarde */}
       {services.length === 0 ? (
   <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 py-8 text-center">
-    <p className="text-xs text-slate-400">No hay servicios este domingo</p>
-    <button
-      onClick={() => onAddService(date.toISOString().slice(0, 10))}
-      className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95"
-    >
-      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-        add
-      </span>
-      Agregar servicio
-    </button>
+    <p className="text-xs text-slate-400">
+      {readOnly ? 'No hay servicios este domingo' : 'No hay servicios este domingo'}
+    </p>
+    {!readOnly && (
+      <button
+        onClick={() => onAddService(date.toISOString().slice(0, 10))}
+        className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95"
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+          add
+        </span>
+        Agregar servicio
+      </button>
+    )}
   </div>
 ) : (
         <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
@@ -139,6 +145,7 @@ export function SundayCard({
               icon="wb_sunny"
               iconColor="text-amber-500"
               services={morning}
+              readOnly={readOnly}
               onServiceClick={onServiceClick}
             />
           )}
@@ -148,13 +155,14 @@ export function SundayCard({
               icon="dark_mode"
               iconColor="text-indigo-500"
               services={afternoon}
+              readOnly={readOnly}
               onServiceClick={onServiceClick}
             />
           )}
         </div>
       )}
-      {/* Botón Agregar otro servicio (solo si ya hay al menos uno) */}
-      {services.length > 0 && (
+            {/* Botón Agregar otro servicio (solo si ya hay al menos uno y no es readOnly) */}
+      {services.length > 0 && !readOnly && (
         <button
           onClick={() => onAddService(date.toISOString().slice(0, 10))}
           className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-blue-200 bg-blue-50/30 py-2.5 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-50/70"
@@ -178,6 +186,7 @@ interface ServiceBlockProps {
   icon: string;
   iconColor: string;
   services: Service[];
+  readOnly?: boolean;
   onServiceClick: (service: Service) => void;
 }
 
@@ -186,6 +195,7 @@ function ServiceBlock({
   icon,
   iconColor,
   services,
+  readOnly = false,
   onServiceClick,
 }: ServiceBlockProps) {
   return (
@@ -317,19 +327,21 @@ function ServiceBlock({
                   </button>
                 </div>
 
-                {/* Botón Editar — siempre visible */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onServiceClick(service);
-                  }}
-                  className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200/60 bg-white py-1.5 text-[11px] font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-800"
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
-                    edit
-                  </span>
-                  Ver detalles / Editar servicio
-                </button>
+                                {/* Botón Editar — solo si no es readOnly */}
+                {!readOnly && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onServiceClick(service);
+                    }}
+                    className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200/60 bg-white py-1.5 text-[11px] font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-800"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+                      edit
+                    </span>
+                    Ver detalles / Editar servicio
+                  </button>
+                )}
               </>
             )}
           </div>

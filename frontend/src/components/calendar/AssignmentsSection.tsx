@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { UserPlus, Trash2, Check, X, Clock, Loader2, Users, Crown } from 'lucide-react';
+import { UserPlus, Trash2, Check, X, Clock, Loader2, Users } from 'lucide-react';
 import { getApiError } from '@/lib/api';
 import { listUsers } from '@/lib/users.api';
 import { listMyMinistries, listMinistries } from '@/lib/ministries.api';
@@ -48,10 +48,15 @@ const statusConfig = {
 
 interface AssignmentsSectionProps {
   service: Service;
+  readOnly?: boolean;
   onUpdate: () => void;
 }
 
-export function AssignmentsSection({ service, onUpdate }: AssignmentsSectionProps) {
+export function AssignmentsSection({
+  service,
+  readOnly = false,
+  onUpdate,
+}: AssignmentsSectionProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
@@ -209,7 +214,7 @@ export function AssignmentsSection({ service, onUpdate }: AssignmentsSectionProp
           )}
         </div>
 
-        {!showAddForm && availableUsers.length > 0 && availableMinistries.length > 0 && (
+        {!readOnly && !showAddForm && availableUsers.length > 0 && availableMinistries.length > 0 && (
           <button
             type="button"
             onClick={() => setShowAddForm(true)}
@@ -234,10 +239,11 @@ export function AssignmentsSection({ service, onUpdate }: AssignmentsSectionProp
 
       {/* Lista de asignaciones */}
       <div className="space-y-2">
-        {visibleAssignments.map((assignment) => (
+                {visibleAssignments.map((assignment) => (
           <AssignmentRow
             key={assignment.id}
             assignment={assignment}
+            readOnly={readOnly}
             onUpdateStatus={(status) =>
               updateMutation.mutate({ id: assignment.id, status })
             }
@@ -368,6 +374,7 @@ export function AssignmentsSection({ service, onUpdate }: AssignmentsSectionProp
 
 interface AssignmentRowProps {
   assignment: ServiceAssignment;
+  readOnly?: boolean;
   onUpdateStatus: (status: string) => void;
   onDelete: () => void;
   isUpdating: boolean;
@@ -376,6 +383,7 @@ interface AssignmentRowProps {
 
 function AssignmentRow({
   assignment,
+  readOnly = false,
   onUpdateStatus,
   onDelete,
   isUpdating,
@@ -423,8 +431,9 @@ function AssignmentRow({
         {config.label}
       </span>
 
-      {/* Acciones */}
-      <div className="flex shrink-0 items-center gap-0.5">
+            {/* Acciones */}
+      {!readOnly && (
+        <div className="flex shrink-0 items-center gap-0.5">
         {assignment.status !== 'CONFIRMED' && (
           <button
             type="button"
@@ -447,7 +456,7 @@ function AssignmentRow({
             <X className="h-3 w-3" />
           </button>
         )}
-        <button
+                <button
           type="button"
           onClick={onDelete}
           disabled={isBusy}
@@ -457,6 +466,7 @@ function AssignmentRow({
           <Trash2 className="h-3 w-3" />
         </button>
       </div>
+      )}
     </div>
   );
 }
