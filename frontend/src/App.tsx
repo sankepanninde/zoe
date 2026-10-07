@@ -13,6 +13,7 @@ import { Team } from '@/pages/Team';
 import { Availability } from '@/pages/Availability';
 import { Settings } from '@/pages/Settings';
 import { AppShell } from '@/components/layout/AppShell';
+import { ColdStartBanner } from '@/components/layout/ColdStartBanner';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -117,9 +118,9 @@ function AppRoutes() {
         <Route
           path="/calendar"
           element={
-            <AdminRoute>
+            <ProtectedRoute>
               <SoundSchedule />
-            </AdminRoute>
+            </ProtectedRoute>
           }
         />
         <Route
@@ -174,6 +175,7 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AppRoutes />
+        <ColdStartBanner />   {/* ← ESTA LÍNEA FALTA */}
         <Toaster
           position="top-right"
           toastOptions={{

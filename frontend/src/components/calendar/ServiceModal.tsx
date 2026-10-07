@@ -49,6 +49,7 @@ interface ServiceModalProps {
   service: Service | null;
   initialDate: string | null;
   serviceTypes: ServiceType[];
+  readOnly?: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -58,6 +59,7 @@ export function ServiceModal({
   service,
   initialDate,
   serviceTypes,
+  readOnly = false,
   onClose,
   onSuccess,
 }: ServiceModalProps) {
@@ -390,13 +392,17 @@ export function ServiceModal({
 
             {/* Asignaciones */}
             {isEditing && service && (
-              <AssignmentsSection service={service} onUpdate={() => {}} />
+              <AssignmentsSection
+                service={service}
+                readOnly={readOnly}
+                onUpdate={() => {}}
+              />
             )}
           </div>
 
           {/* Footer sticky */}
           <div className="flex shrink-0 flex-col-reverse justify-between gap-3 border-t border-border bg-surface px-6 py-4 sm:flex-row">
-            {isEditing ? (
+              {isEditing && !readOnly ? (
               <button
                 type="button"
                 onClick={handleDelete}
@@ -420,30 +426,42 @@ export function ServiceModal({
             )}
 
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="zoe-btn-secondary"
-                disabled={isLoading}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="zoe-btn-primary"
-                disabled={isLoading}
-              >
-                {isLoading && !deleteMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Guardando...
-                  </>
-                ) : isEditing ? (
-                  'Guardar cambios'
-                ) : (
-                  'Crear servicio'
-                )}
-              </button>
+              {readOnly ? (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="zoe-btn-primary"
+                >
+                  Cerrar
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="zoe-btn-secondary"
+                    disabled={isLoading}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="zoe-btn-primary"
+                    disabled={isLoading}
+                  >
+                    {isLoading && !deleteMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Guardando...
+                      </>
+                    ) : isEditing ? (
+                      'Guardar cambios'
+                    ) : (
+                      'Crear servicio'
+                    )}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </form>

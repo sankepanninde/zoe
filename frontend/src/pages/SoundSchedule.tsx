@@ -14,6 +14,7 @@ import type { Service } from '@/types';
 export function SoundSchedule() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const isReadOnly = user?.role === 'TECHNICIAN';
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [initialDate, setInitialDate] = useState<string | null>(null);
@@ -225,6 +226,7 @@ const handleNext = () => {
           currentLabel={currentLabel}
           filterMode={filterMode}
           viewMode={viewMode}
+          readOnly={isReadOnly}
           onFilterChange={setFilterMode}
           onViewChange={setViewMode}
           onPrev={handlePrev}
@@ -251,7 +253,7 @@ const handleNext = () => {
         ? 'No tienes turnos asignados este mes.'
         : 'Aún no hay servicios programados. Crea el primero para empezar.'}
     </p>
-    {filterMode === 'all' && (
+    {filterMode === 'all' && !isReadOnly && (
       <button
         onClick={handleNewService}
         className="mt-5 inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700"
@@ -308,6 +310,7 @@ const handleNext = () => {
           key={sunday.date.toISOString()}
           date={sunday.date}
           services={sunday.services}
+          readOnly={isReadOnly}
           onServiceClick={handleServiceClick}
           onAddService={handleAddServiceForDate}
           isNextSunday={sunday.isNext}
@@ -382,10 +385,12 @@ const handleNext = () => {
               minute: '2-digit',
             })}
           </span>
-          <button className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 font-semibold text-blue-600 transition-colors hover:bg-blue-100">
-            <Download className="h-4 w-4" />
-            Exportar Reporte PDF
-          </button>
+          {!isReadOnly && (
+            <button className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 font-semibold text-blue-600 transition-colors hover:bg-blue-100">
+              <Download className="h-4 w-4" />
+              Exportar Reporte PDF
+            </button>
+          )}
         </div>
       </div>
     </section>
@@ -398,6 +403,7 @@ const handleNext = () => {
         service={selectedService}
         initialDate={initialDate}
         serviceTypes={serviceTypes}
+        readOnly={isReadOnly}
         onClose={handleCloseModal}
         onSuccess={handleSuccess}
       />

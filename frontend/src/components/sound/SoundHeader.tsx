@@ -1,4 +1,4 @@
-import { Plus, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Share2, Eye } from 'lucide-react';
 
 export type ViewMode = 'weekly' | 'monthly' | 'yearly';
 
@@ -7,6 +7,7 @@ interface SoundHeaderProps {
   currentLabel: string;
   filterMode: 'all' | 'mine';
   viewMode: ViewMode;
+  readOnly?: boolean;
   onFilterChange: (mode: 'all' | 'mine') => void;
   onViewChange: (mode: ViewMode) => void;
   onPrev: () => void;
@@ -19,6 +20,7 @@ export function SoundHeader({
   currentLabel,
   filterMode,
   viewMode,
+  readOnly = false,
   onFilterChange,
   onViewChange,
   onPrev,
@@ -45,12 +47,20 @@ export function SoundHeader({
             </span>
             Consolas FOH, IEM & Microfonía
           </span>
+          {readOnly && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+              <Eye className="h-3 w-3" />
+              Solo lectura
+            </span>
+          )}
         </div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">
           Cronograma de Sonido
         </h1>
         <p className="mt-0.5 text-sm font-normal text-slate-500">
-          Asignación técnica, consola, parches y disponibilidad
+          {readOnly
+            ? 'Vista de consulta — consulta quién sirve cada domingo'
+            : 'Asignación técnica, consola, parches y disponibilidad'}
         </p>
       </div>
 
@@ -125,14 +135,16 @@ export function SoundHeader({
           Compartir Roster
         </button>
 
-        {/* CTA principal */}
-        <button
-          onClick={onNewService}
-          className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30 active:scale-95"
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo Servicio
-        </button>
+        {/* CTA principal — SOLO si no es readOnly */}
+        {!readOnly && (
+          <button
+            onClick={onNewService}
+            className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30 active:scale-95"
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo Servicio
+          </button>
+        )}
       </div>
     </header>
   );
