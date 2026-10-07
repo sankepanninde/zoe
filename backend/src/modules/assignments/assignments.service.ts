@@ -22,10 +22,13 @@ export async function listAssignments(churchId: string, serviceId: string) {
       user: {
         select: { id: true, name: true, email: true, position: true },
       },
+      ministry: {
+        select: { id: true, name: true, color: true, icon: true },
+      },
     },
     orderBy: { createdAt: 'asc' },
   });
-}
+}   // ← ESTA LLAVE FALTABA
 
 export async function createAssignment(
   churchId: string,
@@ -65,16 +68,32 @@ export async function createAssignment(
     throw err;
   }
 
+    // Verificar que el ministerio sea válido si viene
+  if (input.ministryId) {
+    const ministry = await prisma.ministry.findFirst({
+      where: { id: input.ministryId, churchId, active: true },
+    });
+    if (!ministry) {
+      const err = new Error('Ministerio no válido');
+      (err as Error & { statusCode: number }).statusCode = 400;
+      throw err;
+    }
+  }
+
   const assignment = await prisma.assignment.create({
     data: {
       serviceId,
       userId: input.userId,
       position: input.position,
+      ministryId: input.ministryId ?? null,
       notes: input.notes ?? null,
     },
     include: {
       user: {
         select: { id: true, name: true, email: true, position: true },
+      },
+      ministry: {
+        select: { id: true, name: true, color: true, icon: true },
       },
     },
   });
@@ -121,10 +140,11 @@ export async function updateAssignment(
     throw err;
   }
 
-  return prisma.assignment.update({
+    return prisma.assignment.update({
     where: { id: assignmentId },
     data: {
       ...(input.position !== undefined && { position: input.position }),
+      ...(input.ministryId !== undefined && { ministryId: input.ministryId }),
       ...(input.notes !== undefined && { notes: input.notes }),
       ...(input.status !== undefined && {
         status: input.status,
@@ -135,9 +155,12 @@ export async function updateAssignment(
       user: {
         select: { id: true, name: true, email: true, position: true },
       },
+      ministry: {
+        select: { id: true, name: true, color: true, icon: true },
+      },
     },
   });
-}
+}  
 
 export async function deleteAssignment(
   churchId: string,

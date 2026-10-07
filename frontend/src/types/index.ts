@@ -88,6 +88,13 @@ export interface ServiceAssignment {
   status: AssignmentStatus;
   confirmedAt?: string | null;
   notes?: string | null;
+  ministryId?: string | null;
+  ministry?: {
+    id: string;
+    name: string;
+    color: string;
+    icon: string | null;
+  } | null;
   user: {
     id: string;
     name: string;

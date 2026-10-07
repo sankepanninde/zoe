@@ -357,10 +357,20 @@ function AssignmentRow({ assignment }: { assignment: ServiceAssignment }) {
         >
           {getInitials(assignment.user.name)}
         </div>
-        <div className="min-w-0">
-          <p className="truncate text-xs font-semibold text-slate-800">
-            {assignment.user.name}
-          </p>
+                <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-xs font-semibold text-slate-800">
+              {assignment.user.name}
+            </p>
+            {assignment.ministry && (
+              <span
+                className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold text-white"
+                style={{ backgroundColor: assignment.ministry.color }}
+              >
+                {assignment.ministry.name}
+              </span>
+            )}
+          </div>
           <p className="truncate text-[10px] text-slate-400">
             {assignment.position}
           </p>
