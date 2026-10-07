@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { UserPlus, Trash2, Check, X, Clock, Loader2, Users } from 'lucide-react';
+import { UserPlus, Trash2, Check, X, Clock, Loader2, Users, Crown } from 'lucide-react';
 import { getApiError } from '@/lib/api';
 import { listUsers } from '@/lib/users.api';
+import { listMyMinistries, listMinistries } from '@/lib/ministries.api';
 import {
   createAssignment,
   updateAssignment,
   deleteAssignment,
 } from '@/lib/services.api';
+import { useAuth } from '@/stores/auth.store';
 import { cn, getInitials } from '@/lib/utils';
 import type { Service, ServiceAssignment } from '@/types';
 
@@ -51,30 +53,99 @@ interface AssignmentsSectionProps {
 
 export function AssignmentsSection({ service, onUpdate }: AssignmentsSectionProps) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+
   const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedMinistryId, setSelectedMinistryId] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedPosition, setSelectedPosition] = useState('');
+
+  // ===========================================
+  // QUERIES
+  // ===========================================
+
+  // Todos los ministerios (para admin) o solo los que lidera (para líder)
+  const { data: allMinistries = [] } = useQuery({
+    queryKey: ['ministries'],
+    queryFn: listMinistries,
+    enabled: isAdmin,
+  });
+
+  const { data: myMinistries = [] } = useQuery({
+    queryKey: ['ministries', 'mine'],
+    queryFn: listMyMinistries,
+    enabled: !isAdmin,
+  });
+
+  // Ministerios que este user PUEDE asignar
+  const availableMinistries = useMemo(() => {
+    if (isAdmin) return allMinistries;
+    return myMinistries.filter((m) => m.isLeader);
+  }, [isAdmin, allMinistries, myMinistries]);
+
+  // Auto-seleccionar si solo hay 1 ministerio disponible
+  const effectiveMinistryId = useMemo(() => {
+    if (selectedMinistryId) return selectedMinistryId;
+    if (availableMinistries.length === 1) return availableMinistries[0]!.id;
+    return '';
+  }, [selectedMinistryId, availableMinistries]);
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => listUsers(true),
   });
 
-  const availableUsers = users.filter(
-    (u) => !service.assignments.some((a) => a.userId === u.id)
-  );
+  // Filtrar usuarios por ministerio seleccionado
+  const availableUsers = useMemo(() => {
+    return users.filter((u) => {
+      // Ya está asignado a este servicio
+      if (service.assignments.some((a) => a.userId === u.id)) return false;
+
+      // Si hay ministerio seleccionado, solo mostrar técnicos de ese ministerio
+      if (effectiveMinistryId) {
+        const belongs = u.ministries?.some(
+          (um) => um.ministry.id === effectiveMinistryId
+        );
+        if (!belongs) return false;
+      }
+
+      return true;
+    });
+  }, [users, service.assignments, effectiveMinistryId]);
+
+  // Filtrar asignaciones visibles según ministerios del líder
+  const visibleAssignments = useMemo(() => {
+    if (isAdmin) return service.assignments;
+
+    const myMinistryIds = myMinistries
+      .filter((m) => m.isLeader)
+      .map((m) => m.id);
+
+    // Un líder ve solo asignaciones de sus ministerios (o sin ministerio)
+    return service.assignments.filter((a) => {
+      if (!a.ministryId) return true; // legacy sin ministerio
+      return myMinistryIds.includes(a.ministryId);
+    });
+  }, [isAdmin, myMinistries, service.assignments]);
+
+  // ===========================================
+  // MUTATIONS
+  // ===========================================
 
   const addMutation = useMutation({
     mutationFn: () =>
       createAssignment(service.id, {
         userId: selectedUserId,
         position: selectedPosition,
+        ministryId: effectiveMinistryId || null,
       }),
     onSuccess: () => {
       toast.success('Técnico asignado');
       setShowAddForm(false);
       setSelectedUserId('');
       setSelectedPosition('');
+      setSelectedMinistryId('');
       queryClient.invalidateQueries({ queryKey: ['services'] });
       onUpdate();
     },
@@ -109,8 +180,13 @@ export function AssignmentsSection({ service, onUpdate }: AssignmentsSectionProp
     addMutation.mutate();
   };
 
-  const assignments = service.assignments;
-  const confirmedCount = assignments.filter((a) => a.status === 'CONFIRMED').length;
+  const confirmedCount = visibleAssignments.filter(
+    (a) => a.status === 'CONFIRMED'
+  ).length;
+
+  // ===========================================
+  // RENDER
+  // ===========================================
 
   return (
     <div className="border-t border-border pt-4">
@@ -121,14 +197,19 @@ export function AssignmentsSection({ service, onUpdate }: AssignmentsSectionProp
           <h4 className="text-sm font-semibold text-foreground">
             Equipo asignado
           </h4>
-          {assignments.length > 0 && (
+          {visibleAssignments.length > 0 && (
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-              {confirmedCount}/{assignments.length}
+              {confirmedCount}/{visibleAssignments.length}
+            </span>
+          )}
+          {!isAdmin && (
+            <span className="rounded-full bg-warning-light px-2 py-0.5 text-[10px] font-bold text-warning-dark">
+              Solo tus ministerios
             </span>
           )}
         </div>
 
-        {!showAddForm && availableUsers.length > 0 && (
+        {!showAddForm && availableUsers.length > 0 && availableMinistries.length > 0 && (
           <button
             type="button"
             onClick={() => setShowAddForm(true)}
@@ -140,17 +221,20 @@ export function AssignmentsSection({ service, onUpdate }: AssignmentsSectionProp
         )}
       </div>
 
-      {/* Lista de asignaciones */}
-      {assignments.length === 0 && !showAddForm && (
+      {/* Lista vacía */}
+      {visibleAssignments.length === 0 && !showAddForm && (
         <div className="rounded-xl border border-dashed border-border bg-surface-elevated/40 p-4 text-center">
           <p className="text-xs text-foreground-muted">
-            Nadie asignado todavía. Agrega al primer técnico.
+            {isAdmin
+              ? 'Nadie asignado todavía. Agrega al primer técnico.'
+              : 'No hay asignaciones de tus ministerios aún.'}
           </p>
         </div>
       )}
 
+      {/* Lista de asignaciones */}
       <div className="space-y-2">
-        {assignments.map((assignment) => (
+        {visibleAssignments.map((assignment) => (
           <AssignmentRow
             key={assignment.id}
             assignment={assignment}
@@ -164,23 +248,64 @@ export function AssignmentsSection({ service, onUpdate }: AssignmentsSectionProp
         ))}
       </div>
 
-      {/* Formulario de agregar */}
+      {/* Formulario agregar */}
       {showAddForm && (
         <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-3">
           <div className="space-y-2">
-            <select
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-              className="zoe-input !py-2 text-sm"
-            >
-              <option value="">Selecciona una persona...</option>
-              {availableUsers.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} {u.position ? `· ${u.position}` : ''}
-                </option>
-              ))}
-            </select>
+            {/* Selector de ministerio (si hay más de 1) */}
+            {availableMinistries.length > 1 && (
+              <div>
+                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+                  Ministerio
+                </label>
+                <select
+                  value={selectedMinistryId}
+                  onChange={(e) => {
+                    setSelectedMinistryId(e.target.value);
+                    setSelectedUserId('');
+                  }}
+                  className="zoe-input !py-2 text-sm"
+                >
+                  <option value="">Selecciona ministerio...</option>
+                  {availableMinistries.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
+            {/* Selector de usuario */}
+            <div>
+              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+                Persona
+              </label>
+              <select
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+                className="zoe-input !py-2 text-sm"
+                disabled={availableMinistries.length > 1 && !effectiveMinistryId}
+              >
+                <option value="">
+                  {availableMinistries.length > 1 && !effectiveMinistryId
+                    ? 'Primero elige un ministerio...'
+                    : 'Selecciona una persona...'}
+                </option>
+                {availableUsers.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} {u.position ? `· ${u.position}` : ''}
+                  </option>
+                ))}
+              </select>
+              {effectiveMinistryId && availableUsers.length === 0 && (
+                <p className="mt-1.5 text-[11px] text-warning-dark">
+                  No hay técnicos disponibles en este ministerio
+                </p>
+              )}
+            </div>
+
+            {/* Posición */}
             <select
               value={selectedPosition}
               onChange={(e) => setSelectedPosition(e.target.value)}
@@ -201,6 +326,7 @@ export function AssignmentsSection({ service, onUpdate }: AssignmentsSectionProp
                   setShowAddForm(false);
                   setSelectedUserId('');
                   setSelectedPosition('');
+                  setSelectedMinistryId('');
                 }}
                 className="zoe-btn-secondary flex-1 !py-2 text-xs"
                 disabled={addMutation.isPending}
@@ -227,7 +353,7 @@ export function AssignmentsSection({ service, onUpdate }: AssignmentsSectionProp
         </div>
       )}
 
-      {availableUsers.length === 0 && !showAddForm && assignments.length > 0 && (
+      {availableUsers.length === 0 && !showAddForm && visibleAssignments.length > 0 && (
         <p className="mt-3 text-center text-xs text-foreground-subtle">
           Todos los técnicos están asignados
         </p>
@@ -268,9 +394,19 @@ function AssignmentRow({
 
       {/* Info */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-semibold text-foreground">
-          {assignment.user.name}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="truncate text-xs font-semibold text-foreground">
+            {assignment.user.name}
+          </p>
+          {assignment.ministry && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold text-white"
+              style={{ backgroundColor: assignment.ministry.color }}
+            >
+              {assignment.ministry.name}
+            </span>
+          )}
+        </div>
         <p className="truncate text-[10px] text-foreground-muted">
           {assignment.position}
         </p>

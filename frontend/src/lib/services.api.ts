@@ -88,7 +88,12 @@ export async function deleteService(id: string): Promise<void> {
 
 export async function createAssignment(
   serviceId: string,
-  payload: { userId: string; position: string; notes?: string | null }
+  payload: {
+    userId: string;
+    position: string;
+    ministryId?: string | null;
+    notes?: string | null;
+  }
 ): Promise<ServiceAssignment> {
   const { data } = await api.post<{ assignment: ServiceAssignment }>(
     `/services/${serviceId}/assignments`,
@@ -100,7 +105,12 @@ export async function createAssignment(
 export async function updateAssignment(
   serviceId: string,
   assignmentId: string,
-  payload: { position?: string; notes?: string | null; status?: string }
+  payload: {
+    position?: string;
+    ministryId?: string | null;
+    notes?: string | null;
+    status?: string;
+  }
 ): Promise<ServiceAssignment> {
   const { data } = await api.patch<{ assignment: ServiceAssignment }>(
     `/services/${serviceId}/assignments/${assignmentId}`,

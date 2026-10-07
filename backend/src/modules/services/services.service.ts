@@ -22,7 +22,7 @@ export async function listServices(churchId: string, query: ListServicesQuery) {
   return prisma.service.findMany({
     where,
     orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
-    include: {
+        include: {
       serviceType: {
         select: { id: true, name: true, color: true, icon: true },
       },
@@ -31,9 +31,12 @@ export async function listServices(churchId: string, query: ListServicesQuery) {
           user: {
             select: { id: true, name: true, email: true, position: true },
           },
+          ministry: {
+            select: { id: true, name: true, color: true, icon: true },
+          },
         },
       },
-    },
+    },   // ← ESTA LLAVE FALTABA
   });
 }
 
@@ -46,6 +49,9 @@ export async function getService(churchId: string, id: string) {
         include: {
           user: {
             select: { id: true, name: true, email: true, position: true },
+          },
+          ministry: {
+            select: { id: true, name: true, color: true, icon: true },
           },
         },
       },
@@ -136,6 +142,9 @@ export async function updateService(
           user: {
             select: { id: true, name: true, email: true, position: true },
           },
+          ministry: {
+            select: { id: true, name: true, color: true, icon: true },
+          },
         },
       },
     },
@@ -167,7 +176,7 @@ export async function listMyServices(churchId: string, userId: string) {
         some: { userId },
       },
     },
-    include: {
+        include: {
       serviceType: {
         select: { id: true, name: true, color: true, icon: true },
       },
@@ -176,9 +185,12 @@ export async function listMyServices(churchId: string, userId: string) {
           user: {
             select: { id: true, name: true, email: true, position: true },
           },
+          ministry: {
+            select: { id: true, name: true, color: true, icon: true },
+          },
         },
       },
-    },
+    },   // ← ESTA LLAVE FALTABA
     orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
   });
 }
