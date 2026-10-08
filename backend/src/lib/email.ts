@@ -1,7 +1,15 @@
-import { Resend } from 'resend';
 import { env } from './env.js';
 
-const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
+// ===========================================
+// TIPOS
+// ===========================================
+
+interface SendEmailParams {
+  to: string;
+  subject: string;
+  html: string;
+  toName?: string;
+}
 
 interface SendAssignmentEmailParams {
   to: string;
@@ -14,12 +22,66 @@ interface SendAssignmentEmailParams {
   position: string;
 }
 
-export async function sendAssignmentEmail(params: SendAssignmentEmailParams): Promise<void> {
-  if (!resend) {
-    console.warn('[email] RESEND_API_KEY no configurada — email no enviado');
-    return;
+// ===========================================
+// CORE: ENVIAR EMAIL VÍA BREVO
+// ===========================================
+
+async function sendEmail(params: SendEmailParams): Promise<boolean> {
+  if (!env.BREVO_API_KEY) {
+    console.warn('[email] BREVO_API_KEY no configurada — email no enviado');
+    return false;
   }
 
+  const body = {
+    sender: {
+      name: env.BREVO_FROM_NAME,
+      email: env.BREVO_FROM_EMAIL,
+    },
+    to: [
+      {
+        email: params.to,
+        ...(params.toName ? { name: params.toName } : {}),
+      },
+    ],
+    subject: params.subject,
+    htmlContent: params.html,
+  };
+
+  try {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        `[email] ❌ Brevo error ${response.status}:`,
+        errorText
+      );
+      return false;
+    }
+
+    console.log(`[email] ✅ Enviado a ${params.to}`);
+    return true;
+  } catch (err) {
+    console.error('[email] ❌ Error de red:', err);
+    return false;
+  }
+}
+
+// ===========================================
+// EMAIL: ASIGNACIÓN DE TURNO
+// ===========================================
+
+export async function sendAssignmentEmail(
+  params: SendAssignmentEmailParams
+): Promise<void> {
   const dateFormatted = new Intl.DateTimeFormat('es-CO', {
     weekday: 'long',
     day: 'numeric',
@@ -133,16 +195,16 @@ export async function sendAssignmentEmail(params: SendAssignmentEmailParams): Pr
 </html>
   `.trim();
 
-  try {
-    await resend.emails.send({
-      from: env.RESEND_FROM_EMAIL,
-      to: params.to,
-      subject: `🎵 Nuevo turno asignado — ${dateFormatted}`,
-      html,
-    });
-    console.log(`[email] ✅ Enviado a ${params.to}`);
-  } catch (err) {
-    console.error('[email] ❌ Error al enviar:', err);
-    // No lanzar: no queremos que falle la asignación si falla el email
-  }
+  await sendEmail({
+    to: params.to,
+    toName: params.userName,
+    subject: `🎵 Nuevo turno asignado — ${dateFormatted}`,
+    html,
+  });
 }
+
+// ===========================================
+// EXPORTAR LA FUNCIÓN BASE (por si la necesitas después)
+// ===========================================
+
+export { sendEmail };

@@ -249,3 +249,34 @@ export async function getCurrentUser(userId: string) {
   if (!user) throw new AuthError('Usuario no encontrado', 404);
   return user;
 }
+export async function changeOwnPassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+  if (!user || !user.active) {
+    throw new AuthError('Usuario no válido', 404);
+  }
+
+  // Verificar contraseña actual
+  const valid = await verifyPassword(user.passwordHash, currentPassword);
+  if (!valid) {
+    throw new AuthError('La contraseña actual es incorrecta', 400);
+  }
+
+  // Hashear y actualizar
+  const newHash = await hashPassword(newPassword);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: newHash },
+  });
+
+  // Revocar todos los refresh tokens (seguridad: forzar re-login en otros dispositivos)
+  await prisma.refreshToken.updateMany({
+    where: { userId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+}

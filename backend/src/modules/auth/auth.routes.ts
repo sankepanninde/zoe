@@ -30,4 +30,10 @@ export async function authRoutes(app: FastifyInstance) {
     preHandler: authMiddleware,
     handler: controller.meHandler,
   });
+
+  // Cambiar mi propia contraseña (requiere auth)
+  app.patch('/change-password', {
+    preHandler: authMiddleware,
+    handler: controller.changeOwnPasswordHandler,
+  });
 }

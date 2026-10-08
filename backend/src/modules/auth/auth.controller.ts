@@ -2,6 +2,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import {
   registerSchema,
   loginSchema,
+  changeOwnPasswordSchema,
 } from './auth.schemas.js';
 import * as authService from './auth.service.js';
 import { env } from '../../lib/env.js';
@@ -92,4 +93,26 @@ export async function meHandler(request: FastifyRequest, reply: FastifyReply) {
 
   const user = await authService.getCurrentUser(request.user.id);
   return reply.send({ user });
+}
+export async function changeOwnPasswordHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  if (!request.user) {
+    return reply.status(401).send({
+      statusCode: 401,
+      error: 'Unauthorized',
+      message: 'No autenticado',
+    });
+  }
+
+  const input = changeOwnPasswordSchema.parse(request.body);
+
+  await authService.changeOwnPassword(
+    request.user.id,
+    input.currentPassword,
+    input.newPassword
+  );
+
+  return reply.status(204).send();
 }
