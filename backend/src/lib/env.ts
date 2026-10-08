@@ -25,10 +25,11 @@ const envSchema = z.object({
     .transform((v) => v === 'true')
     .default('false'),
   // ===========================================
-  // EMAIL (Resend)
+  // EMAIL (Brevo)
   // ===========================================
-  RESEND_API_KEY: z.string().optional(),
-  RESEND_FROM_EMAIL: z.string().default('Zoe <onboarding@resend.dev>'),
+  BREVO_API_KEY: z.string().optional(),
+  BREVO_FROM_EMAIL: z.string().default('kevin@example.com'), // email verificado en Brevo
+  BREVO_FROM_NAME: z.string().default('Zoe'),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
 });
 

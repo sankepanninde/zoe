@@ -4,9 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Loader2, X, Crown, Check } from 'lucide-react';
+import { Loader2, X, Crown, Check, KeyRound } from 'lucide-react';
 import { getApiError } from '@/lib/api';
-import { createUser, updateUser } from '@/lib/users.api';
+import { createUser, updateUser, changeUserPassword } from '@/lib/users.api';
 import { listMinistries } from '@/lib/ministries.api';
 import { cn } from '@/lib/utils';
 import type { Ministry, User, UserMinistryInput } from '@/types';
@@ -44,10 +44,15 @@ interface UserModalProps {
 export function UserModal({ open, user, onClose, onSuccess }: UserModalProps) {
   const isEditing = Boolean(user);
 
-  // Estado para ministerios (fuera de react-hook-form por complejidad)
+  // Estado para ministerios
   const [selectedMinistries, setSelectedMinistries] = useState<
     Record<string, { isLeader: boolean; position: string }>
   >({});
+
+  // Estado para reset de contraseña (solo admin)
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const { data: ministries = [], isLoading: loadingMinistries } = useQuery({
     queryKey: ['ministries'],
@@ -82,7 +87,6 @@ export function UserModal({ open, user, onClose, onSuccess }: UserModalProps) {
           phone: user.phone ?? '',
           role: user.role as 'ADMIN' | 'LEADER' | 'TECHNICIAN',
         });
-        // Pre-cargar ministerios del user
         const map: Record<string, { isLeader: boolean; position: string }> = {};
         (user.ministries ?? []).forEach((um) => {
           map[um.ministry.id] = {
@@ -101,6 +105,10 @@ export function UserModal({ open, user, onClose, onSuccess }: UserModalProps) {
         });
         setSelectedMinistries({});
       }
+      // Reset estados de password
+      setShowPasswordReset(false);
+      setNewPassword('');
+      setPasswordError('');
     }
   }, [open, user, reset]);
 
@@ -179,6 +187,26 @@ export function UserModal({ open, user, onClose, onSuccess }: UserModalProps) {
     },
     onError: (err) => toast.error(getApiError(err)),
   });
+
+  const passwordMutation = useMutation({
+    mutationFn: (password: string) => changeUserPassword(user!.id, password),
+    onSuccess: () => {
+      toast.success('Contraseña actualizada');
+      setShowPasswordReset(false);
+      setNewPassword('');
+      setPasswordError('');
+    },
+    onError: (err) => toast.error(getApiError(err)),
+  });
+
+  const handleResetPassword = () => {
+    if (!newPassword || newPassword.length < 8) {
+      setPasswordError('Mínimo 8 caracteres');
+      return;
+    }
+    setPasswordError('');
+    passwordMutation.mutate(newPassword);
+  };
 
   const onSubmit = (data: UserFormData) => {
     if (isEditing) {
@@ -309,9 +337,7 @@ export function UserModal({ open, user, onClose, onSuccess }: UserModalProps) {
             <div className="border-t border-border pt-4">
               <div className="mb-3 flex items-center justify-between">
                 <div>
-                  <label className="zoe-label !mb-0">
-                    Ministerios
-                  </label>
+                  <label className="zoe-label !mb-0">Ministerios</label>
                   <p className="text-xs text-foreground-subtle">
                     Selecciona los ministerios donde sirve esta persona
                   </p>
@@ -346,7 +372,6 @@ export function UserModal({ open, user, onClose, onSuccess }: UserModalProps) {
                             : 'border-border bg-surface hover:border-border/80'
                         )}
                       >
-                        {/* Row: checkbox + name */}
                         <button
                           type="button"
                           onClick={() => toggleMinistry(m)}
@@ -380,7 +405,6 @@ export function UserModal({ open, user, onClose, onSuccess }: UserModalProps) {
                           </span>
                         </button>
 
-                        {/* Expanded options cuando está seleccionado */}
                         {selected && data && (
                           <div className="space-y-2 border-t border-border/60 px-3 py-2.5">
                             <div className="flex items-center gap-2">
@@ -414,6 +438,83 @@ export function UserModal({ open, user, onClose, onSuccess }: UserModalProps) {
                 </div>
               )}
             </div>
+
+            {/* =========================================== */}
+            {/* SEGURIDAD — RESET PASSWORD (solo editar) */}
+            {/* =========================================== */}
+            {isEditing && (
+              <div className="border-t border-border pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="zoe-label !mb-0 flex items-center gap-1.5">
+                      <KeyRound className="h-3.5 w-3.5" />
+                      Seguridad
+                    </label>
+                    <p className="text-xs text-foreground-subtle">
+                      Restablece la contraseña del usuario
+                    </p>
+                  </div>
+                  {!showPasswordReset && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordReset(true)}
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+                    >
+                      Cambiar contraseña
+                    </button>
+                  )}
+                </div>
+
+                {showPasswordReset && (
+                  <div className="mt-3 rounded-xl border border-warning-light bg-warning-light/40 p-3">
+                    <p className="mb-2 text-xs text-warning-dark">
+                      <strong>Atención:</strong> al cambiar la contraseña, el usuario tendrá
+                      que iniciar sesión de nuevo en todos sus dispositivos.
+                    </p>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Nueva contraseña (mínimo 8 caracteres)"
+                      autoComplete="new-password"
+                      className="zoe-input !py-2 text-sm"
+                    />
+                    {passwordError && (
+                      <p className="mt-1.5 text-xs text-danger">{passwordError}</p>
+                    )}
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowPasswordReset(false);
+                          setNewPassword('');
+                          setPasswordError('');
+                        }}
+                        disabled={passwordMutation.isPending}
+                        className="zoe-btn-secondary flex-1 !py-2 text-xs"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetPassword}
+                        disabled={passwordMutation.isPending}
+                        className="zoe-btn-primary flex-1 !py-2 text-xs"
+                      >
+                        {passwordMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Actualizando...
+                          </>
+                        ) : (
+                          'Actualizar contraseña'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* FOOTER */}
