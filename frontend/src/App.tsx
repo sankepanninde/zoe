@@ -14,6 +14,7 @@ import { Availability } from '@/pages/Availability';
 import { Settings } from '@/pages/Settings';
 import { AppShell } from '@/components/layout/AppShell';
 import { ColdStartBanner } from '@/components/layout/ColdStartBanner';
+import { MustChangePasswordModal } from '@/components/auth/MustChangePasswordModal';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -175,7 +176,8 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AppRoutes />
-        <ColdStartBanner />   {/* ← ESTA LÍNEA FALTA */}
+        <ColdStartBanner />
+        <MustChangePasswordModal />
         <Toaster
           position="top-right"
           toastOptions={{

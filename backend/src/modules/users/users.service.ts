@@ -167,6 +167,7 @@ export async function createUser(churchId: string, input: CreateUserInput) {
         name: input.name,
         phone: input.phone ?? null,
         role: input.role,
+        mustChangePassword: true,  // ← NUEVA LÍNEA
       },
       select: { id: true },
     });
@@ -265,7 +266,10 @@ export async function changePassword(
 
   await prisma.user.update({
     where: { id },
-    data: { passwordHash },
+    data: {
+      passwordHash,
+      mustChangePassword: true,  // ← forzar cambio la próxima vez
+    },
   });
 
   // Revocar tokens

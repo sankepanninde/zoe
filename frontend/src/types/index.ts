@@ -54,7 +54,8 @@ export interface User {
   position?: string | null;
   avatarUrl?: string | null;
   active: boolean;
-  ministries?: UserMinistry[];   // ← NUEVA LÍNEA
+  mustChangePassword?: boolean;  // ← NUEVO
+  ministries?: UserMinistry[];
   lastLoginAt?: string | null;
   createdAt?: string;
   church?: Church;
