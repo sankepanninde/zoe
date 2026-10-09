@@ -18,10 +18,12 @@ function getSessionContext(request: FastifyRequest) {
 }
 
 function setRefreshCookie(reply: FastifyReply, token: string) {
+  const isProduction = env.NODE_ENV === 'production';
+
   reply.setCookie(REFRESH_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: env.COOKIE_SECURE,
-    sameSite: 'strict',
+    secure: isProduction ? true : env.COOKIE_SECURE,
+    sameSite: isProduction ? 'none' : 'lax',
     domain: env.COOKIE_DOMAIN === 'localhost' ? undefined : env.COOKIE_DOMAIN,
     path: '/api/auth',
     maxAge: Math.floor(parseDuration(env.JWT_REFRESH_EXPIRES_IN) / 1000),
@@ -29,7 +31,11 @@ function setRefreshCookie(reply: FastifyReply, token: string) {
 }
 
 function clearRefreshCookie(reply: FastifyReply) {
-  reply.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth' });
+  reply.clearCookie(REFRESH_COOKIE_NAME, {
+    path: '/api/auth',
+    sameSite: 'none',
+    secure: true,
+  });
 }
 
 export async function registerHandler(request: FastifyRequest, reply: FastifyReply) {
