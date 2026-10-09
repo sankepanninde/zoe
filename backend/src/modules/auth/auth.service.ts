@@ -33,7 +33,17 @@ interface SessionContext {
 export async function registerChurchAndAdmin(
   input: RegisterInput,
   ctx: SessionContext = {}
-): Promise<{ user: { id: string; email: string; name: string; role: string; churchId: string }; tokens: AuthTokens }> {
+): Promise<{
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    churchId: string;
+    mustChangePassword: boolean;
+  };
+  tokens: AuthTokens;
+}> {
   // Verificar que el email no exista ya
   const existingUser = await prisma.user.findFirst({
     where: { email: input.email },
@@ -102,6 +112,7 @@ export async function registerChurchAndAdmin(
       name: result.user.name,
       role: result.user.role,
       churchId: result.church.id,
+      mustChangePassword: false,  // admin recién registrado no necesita cambiarla
     },
     tokens,
   };
@@ -110,7 +121,17 @@ export async function registerChurchAndAdmin(
 export async function login(
   input: LoginInput,
   ctx: SessionContext = {}
-): Promise<{ user: { id: string; email: string; name: string; role: string; churchId: string }; tokens: AuthTokens }> {
+): Promise<{
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    churchId: string;
+    mustChangePassword: boolean;
+  };
+  tokens: AuthTokens;
+}> {
   const user = await prisma.user.findFirst({
     where: { email: input.email },
   });
@@ -138,6 +159,7 @@ export async function login(
       name: user.name,
       role: user.role,
       churchId: user.churchId,
+      mustChangePassword: user.mustChangePassword,  // ← NUEVO
     },
     tokens,
   };
@@ -233,6 +255,7 @@ export async function getCurrentUser(userId: string) {
       churchId: true,
       phone: true,
       position: true,
+      mustChangePassword: true,  // ← NUEVO
       createdAt: true,
       church: {
         select: {
@@ -267,11 +290,14 @@ export async function changeOwnPassword(
     throw new AuthError('La contraseña actual es incorrecta', 400);
   }
 
-  // Hashear y actualizar
+    // Hashear y actualizar
   const newHash = await hashPassword(newPassword);
   await prisma.user.update({
     where: { id: userId },
-    data: { passwordHash: newHash },
+    data: {
+      passwordHash: newHash,
+      mustChangePassword: false,  // ← ya no necesita cambiarla
+    },
   });
 
   // Revocar todos los refresh tokens (seguridad: forzar re-login en otros dispositivos)
