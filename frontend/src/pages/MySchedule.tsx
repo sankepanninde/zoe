@@ -5,7 +5,7 @@ import { NextShiftCard } from '@/components/my-schedule/NextShiftCard';
 import { ReplaceRequestModal } from '@/components/my-schedule/ReplaceRequestModal';
 import { YearlyMatrix } from '@/components/my-schedule/YearlyMatrix';
 import { ServiceModal } from '@/components/calendar/ServiceModal';
-import { listMyServices, listServiceTypes } from '@/lib/services.api';
+import { listServices, listServiceTypes } from '@/lib/services.api';
 import { useAuth } from '@/stores/auth.store';
 import type { Service } from '@/types';
 
@@ -17,10 +17,21 @@ export function MySchedule() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [nextShiftService, setNextShiftService] = useState<Service | null>(null);
 
-  const { data: myServices = [], isLoading, refetch } = useQuery({
-    queryKey: ['services', 'me'],
-    queryFn: () => listMyServices(),
+    // Traemos TODOS los servicios del año (no solo los del user)
+  const { data: allServices = [], isLoading, refetch } = useQuery({
+    queryKey: ['services', 'year', year],
+    queryFn: () =>
+      listServices({ from: `${year}-01-01`, to: `${year}-12-31` }),
   });
+
+  // Derivar los turnos personales del user (para KPIs y tarjeta "Próximo turno")
+  const myServices = useMemo(
+    () =>
+      allServices.filter((s) =>
+        s.assignments.some((a) => a.userId === user?.id)
+      ),
+    [allServices, user?.id]
+  );
 
   const { data: serviceTypes = [] } = useQuery({
     queryKey: ['service-types'],
@@ -268,7 +279,7 @@ export function MySchedule() {
         ) : (
           <YearlyMatrix
             year={year}
-            services={myServices}
+            services={allServices}
             userId={user?.id ?? ''}
             onDayClick={handleDayClick}
           />
