@@ -1,6 +1,7 @@
-import { NavLink } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '@/stores/auth.store';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 
 interface NavItem {
   to: string;
@@ -20,18 +21,6 @@ const ALL_NAV_ITEMS: NavItem[] = [
     to: '/calendar',
     label: 'Cronograma',
     icon: 'equalizer',
-    roles: ['ADMIN', 'LEADER', 'TECHNICIAN', 'SUPER_ADMIN'],
-  },
-  {
-    to: '/calendar/sundays',
-    label: 'Domingos',
-    icon: 'event_available',
-    roles: ['ADMIN', 'LEADER', 'SUPER_ADMIN'],
-  },
-  {
-    to: '/team',
-    label: 'Equipo',
-    icon: 'group',
     roles: ['ADMIN', 'LEADER', 'SUPER_ADMIN'],
   },
   {
@@ -43,8 +32,22 @@ const ALL_NAV_ITEMS: NavItem[] = [
 ];
 
 export function MobileBottomNav() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const userRole = user?.role ?? 'TECHNICIAN';
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [menuOpen]);
 
   const navItems = ALL_NAV_ITEMS.filter((item) => item.roles.includes(userRole));
 
@@ -57,7 +60,7 @@ export function MobileBottomNav() {
         <NavLink
           key={item.to}
           to={item.to}
-          end={item.to === '/' || item.to === '/calendar' || item.to === '/team'}
+          end={item.to === '/' || item.to === '/calendar'}
           className={({ isActive }) =>
             cn(
               'group relative flex min-w-[64px] flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-1.5 transition-all',
@@ -97,6 +100,80 @@ export function MobileBottomNav() {
           )}
         </NavLink>
       ))}
+
+      {/* AVATAR + MENÚ */}
+      <div className="relative flex-1" ref={menuRef}>
+        <button
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          className="flex min-w-[64px] w-full flex-col items-center gap-1 rounded-2xl px-2 py-1.5"
+        >
+          <span
+            className={cn(
+              'flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-[10px] font-bold text-white ring-2 transition-all',
+              menuOpen ? 'ring-blue-400' : 'ring-slate-600/80'
+            )}
+          >
+            {getInitials(user?.name ?? 'U')}
+          </span>
+          <span className="text-[10px] font-semibold tracking-tight text-slate-400">
+            Perfil
+          </span>
+        </button>
+
+        {menuOpen && (
+          <div className="animate-fade-in absolute bottom-full right-2 mb-2 w-60 overflow-hidden rounded-2xl border border-slate-700/80 bg-[#0F172A] shadow-2xl ring-1 ring-white/10">
+            <div className="flex items-center gap-3 border-b border-slate-700/60 px-4 py-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-xs font-bold text-white">
+                {getInitials(user?.name ?? 'U')}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-white">
+                  {user?.name ?? 'Usuario'}
+                </p>
+                <p className="truncate text-[10px] text-blue-400">
+                  {user?.email}
+                </p>
+              </div>
+            </div>
+
+            <div className="py-1">
+              <Link
+                to="/settings"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-slate-800/80 hover:text-white"
+              >
+                <span
+                  className="material-symbols-outlined text-slate-400"
+                  style={{ fontSize: 18 }}
+                >
+                  settings
+                </span>
+                Ajustes
+              </Link>
+            </div>
+
+            <div className="border-t border-slate-700/60 p-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  logout();
+                }}
+                className="flex w-full items-center gap-3 rounded-xl bg-rose-500/10 px-4 py-2.5 text-sm font-semibold text-rose-400 transition-colors hover:bg-rose-500/20"
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: 18 }}
+                >
+                  logout
+                </span>
+                Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </nav>
   );
 }

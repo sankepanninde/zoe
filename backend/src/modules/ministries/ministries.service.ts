@@ -158,3 +158,44 @@ export async function canManageMinistry(
   if (currentRole === 'SUPER_ADMIN' || currentRole === 'ADMIN') return true;
   return isLeaderOf(currentUserId, ministryId);
 }
+
+// ===========================================
+// SEED: Crear ministerios por defecto para una iglesia nueva
+// ===========================================
+
+const DEFAULT_MINISTRIES = [
+  { name: 'Sonido',          color: '#2563EB', icon: 'graphic_eq' },
+  { name: 'Alabanza',        color: '#7C3AED', icon: 'music_note' },
+  { name: 'Audiovisuales',   color: '#0891B2', icon: 'videocam' },
+  { name: 'Damas',           color: '#DB2777', icon: 'woman' },
+  { name: 'Varones',         color: '#1E40AF', icon: 'man' },
+  { name: 'Jóvenes Adultos', color: '#059669', icon: 'groups' },
+  { name: 'Jóvenes',         color: '#F59E0B', icon: 'sports_handball' },
+  { name: 'Ujieres',         color: '#DC2626', icon: 'support_agent' },
+  { name: 'Adolescentes',    color: '#8B5CF6', icon: 'backpack' },
+  { name: 'Infantes',        color: '#EC4899', icon: 'child_care' },
+  { name: 'Párvulos',        color: '#F97316', icon: 'toys' },
+  { name: 'Nuevos',          color: '#10B981', icon: 'waving_hand' },
+];
+
+export async function seedDefaultMinistries(churchId: string): Promise<void> {
+  const existing = await prisma.ministry.findMany({
+    where: { churchId },
+    select: { name: true },
+  });
+  const existingNames = new Set(existing.map((m) => m.name));
+
+  const toCreate = DEFAULT_MINISTRIES.filter((m) => !existingNames.has(m.name));
+  if (toCreate.length === 0) return;
+
+  await prisma.ministry.createMany({
+    data: toCreate.map((m) => ({
+      churchId,
+      name: m.name,
+      color: m.color,
+      icon: m.icon,
+      isDefault: true,
+      active: true,
+    })),
+  });
+}

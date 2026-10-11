@@ -206,5 +206,86 @@ export async function sendAssignmentEmail(
 // ===========================================
 // EXPORTAR LA FUNCIÓN BASE (por si la necesitas después)
 // ===========================================
+// ===========================================
+// EMAIL: RECUPERACIÓN DE CONTRASEÑA
+// ===========================================
+
+interface SendPasswordResetEmailParams {
+  to: string;
+  userName: string;
+  churchName: string;
+  resetUrl: string;
+}
+
+export async function sendPasswordResetEmail(
+  params: SendPasswordResetEmailParams
+): Promise<void> {
+  const firstName = params.userName.split(' ')[0];
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0;padding:0;background:#F1F5F9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F1F5F9;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;background:#FFFFFF;border-radius:24px;overflow:hidden;box-shadow:0 4px 24px rgba(15,23,42,0.08);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);padding:32px 40px;">
+              <div style="font-size:24px;font-weight:800;color:#FFFFFF;letter-spacing:-0.5px;">Zoe</div>
+              <div style="font-size:13px;color:#BFDBFE;margin-top:4px;font-weight:500;">${params.churchName}</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 40px 24px 40px;">
+              <h1 style="margin:0;font-size:24px;font-weight:700;color:#0F172A;letter-spacing:-0.5px;line-height:1.3;">
+                Hola ${firstName} 🔑
+              </h1>
+              <p style="margin:12px 0 0 0;font-size:15px;color:#64748B;line-height:1.6;">
+                Recibimos una solicitud para restablecer tu contraseña. Si fuiste tú, haz click en el botón de abajo.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:16px 40px 32px 40px;">
+              <a href="${params.resetUrl}" style="display:inline-block;background:#2563EB;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:15px;padding:14px 32px;border-radius:12px;box-shadow:0 4px 12px rgba(37,99,235,0.3);">
+                Restablecer mi contraseña →
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 40px 24px 40px;">
+              <p style="margin:0;font-size:13px;color:#94A3B8;line-height:1.6;text-align:center;">
+                Este link expira en 1 hora. Si no solicitaste este cambio, ignora este correo.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#F8FAFC;padding:24px 40px;border-top:1px solid #E2E8F0;">
+              <p style="margin:0;font-size:12px;color:#94A3B8;text-align:center;line-height:1.5;">
+                Enviado por <strong style="color:#64748B;">Zoe</strong> · Sistema de gestión ministerial<br>
+                ${params.churchName}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  await sendEmail({
+    to: params.to,
+    toName: params.userName,
+    subject: '🔑 Restablece tu contraseña — Zoe',
+    html,
+  });
+}
 
 export { sendEmail };

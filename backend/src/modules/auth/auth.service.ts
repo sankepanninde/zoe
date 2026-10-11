@@ -86,6 +86,18 @@ export async function registerChurchAndAdmin(
     return { church, user };
   });
 
+    // ===========================================
+  // AUTO-SEED: Ministerios por defecto
+  // ===========================================
+  try {
+    const { seedDefaultMinistries } = await import(
+      '../ministries/ministries.service.js'
+    );
+    await seedDefaultMinistries(result.church.id);
+  } catch (err) {
+    console.error('[auth] Error al crear ministerios:', err);
+  }
+
   // ===========================================
   // AUTO-SEED: Generar domingos del año actual
   // ===========================================
@@ -303,6 +315,85 @@ export async function changeOwnPassword(
   // Revocar todos los refresh tokens (seguridad: forzar re-login en otros dispositivos)
   await prisma.refreshToken.updateMany({
     where: { userId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+}
+// ===========================================
+// PASSWORD RESET
+// ===========================================
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  const user = await prisma.user.findFirst({
+    where: { email, active: true },
+    include: { church: { select: { name: true } } },
+  });
+
+  // Por seguridad, no revelamos si el email existe o no
+  // Siempre devolvemos éxito aunque no exista
+  if (!user) {
+    console.log(`[auth] Password reset solicitado para email inexistente: ${email}`);
+    return;
+  }
+
+  // Generar token aleatorio
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      resetToken: token,
+      resetTokenExpiresAt: expiresAt,
+    },
+  });
+
+  // Enviar email
+  try {
+    const { sendPasswordResetEmail } = await import('../../lib/email.js');
+    const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${token}`;
+    await sendPasswordResetEmail({
+      to: user.email,
+      userName: user.name,
+      churchName: user.church.name,
+      resetUrl,
+    });
+  } catch (err) {
+    console.error('[auth] Error al enviar email de reset:', err);
+    // No fallar la request si el email falla
+  }
+}
+
+export async function resetPassword(
+  token: string,
+  newPassword: string
+): Promise<void> {
+  const user = await prisma.user.findFirst({
+    where: { resetToken: token },
+  });
+
+  if (!user) {
+    throw new AuthError('Token inválido', 400);
+  }
+
+  if (!user.resetTokenExpiresAt || user.resetTokenExpiresAt < new Date()) {
+    throw new AuthError('El token ha expirado. Solicita uno nuevo.', 400);
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash,
+      mustChangePassword: false,
+      resetToken: null,
+      resetTokenExpiresAt: null,
+    },
+  });
+
+  // Revocar todos los refresh tokens por seguridad
+  await prisma.refreshToken.updateMany({
+    where: { userId: user.id, revokedAt: null },
     data: { revokedAt: new Date() },
   });
 }

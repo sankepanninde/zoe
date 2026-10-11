@@ -31,3 +31,18 @@ export const changeOwnPasswordSchema = z.object({
 });
 
 export type ChangeOwnPasswordInput = z.infer<typeof changeOwnPasswordSchema>;
+// ===========================================
+// PASSWORD RESET
+// ===========================================
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Email inválido').toLowerCase(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token requerido'),
+  newPassword: passwordSchema,
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

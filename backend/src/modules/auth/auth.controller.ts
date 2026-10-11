@@ -3,6 +3,8 @@ import {
   registerSchema,
   loginSchema,
   changeOwnPasswordSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from './auth.schemas.js';
 import * as authService from './auth.service.js';
 import { env } from '../../lib/env.js';
@@ -120,5 +122,22 @@ export async function changeOwnPasswordHandler(
     input.newPassword
   );
 
+  return reply.status(204).send();
+}
+export async function forgotPasswordHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const input = forgotPasswordSchema.parse(request.body);
+  await authService.requestPasswordReset(input.email);
+  return reply.status(204).send();
+}
+
+export async function resetPasswordHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const input = resetPasswordSchema.parse(request.body);
+  await authService.resetPassword(input.token, input.newPassword);
   return reply.status(204).send();
 }
