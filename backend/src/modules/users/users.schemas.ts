@@ -43,3 +43,13 @@ export const changePasswordSchema = z.object({
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+// ===========================================
+// UPDATE OWN PROFILE (cualquier usuario)
+// ===========================================
+
+export const updateOwnProfileSchema = z.object({
+  name: z.string().min(2, 'Mínimo 2 caracteres').max(100).optional(),
+  phone: z.string().max(20).optional().nullable(),
+});
+
+export type UpdateOwnProfileInput = z.infer<typeof updateOwnProfileSchema>;

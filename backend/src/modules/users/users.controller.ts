@@ -4,6 +4,7 @@ import {
   createUserSchema,
   updateUserSchema,
   changePasswordSchema,
+  updateOwnProfileSchema,
 } from './users.schemas.js';
 
 // ===========================================
@@ -198,4 +199,19 @@ export async function deleteHandler(
 
   await service.deleteUser(manager.churchId, request.params.id, manager.id);
   return reply.status(204).send();
+}
+// ===========================================
+// UPDATE OWN PROFILE
+// ===========================================
+
+export async function updateMeHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const user = requireUser(request, reply);
+  if (!user) return;
+
+  const input = updateOwnProfileSchema.parse(request.body);
+  const updated = await service.updateOwnProfile(user.id, input);
+  return reply.send({ user: updated });
 }

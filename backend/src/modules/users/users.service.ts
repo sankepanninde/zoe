@@ -16,6 +16,7 @@ const publicUserSelect = {
   name: true,
   role: true,
   phone: true,
+  avatarUrl: true,
   active: true,
   lastLoginAt: true,
   createdAt: true,
@@ -311,6 +312,34 @@ export async function deleteUser(
   return prisma.user.update({
     where: { id },
     data: { active: false },
+    select: publicUserSelect,
+  });
+}
+// ===========================================
+// UPDATE OWN PROFILE
+// ===========================================
+
+export async function updateOwnProfile(
+  userId: string,
+  input: { name?: string; phone?: string | null }
+) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+
+  if (!user) {
+    const err = new Error('Usuario no encontrado');
+    (err as Error & { statusCode: number }).statusCode = 404;
+    throw err;
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.phone !== undefined && { phone: input.phone }),
+    },
     select: publicUserSelect,
   });
 }
