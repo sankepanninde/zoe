@@ -61,3 +61,18 @@ export async function changeUserPassword(
 export async function deleteUser(id: string): Promise<void> {
   await api.delete(`/users/${id}`);
 }
+// ===========================================
+// UPDATE OWN PROFILE (cualquier usuario)
+// ===========================================
+
+export interface UpdateOwnProfilePayload {
+  name?: string;
+  phone?: string | null;
+}
+
+export async function updateOwnProfile(
+  payload: UpdateOwnProfilePayload
+): Promise<User> {
+  const { data } = await api.patch<{ user: User }>('/users/me', payload);
+  return data.user;
+}

@@ -6,6 +6,10 @@ export async function usersRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authMiddleware);
 
   app.get('/', controller.listHandler);
+
+  // ⚠️ /me va ANTES de /:id (Fastify matchea en orden)
+  app.patch('/me', controller.updateMeHandler);
+
   app.get('/:id', controller.getHandler);
   app.post('/', controller.createHandler);
   app.patch('/:id', controller.updateHandler);
