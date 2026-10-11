@@ -4,7 +4,8 @@ import { useConnection } from '@/stores/connection.store';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 // Cuánto esperar antes de mostrar "Despertando servidor..."
-const WAKE_UP_THRESHOLD_MS = 3000;
+// Solo si tarda más de 8s (cold start real de Render)
+const WAKE_UP_THRESHOLD_MS = 8000;
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -22,9 +23,14 @@ let wakeUpTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingRequests = 0;
 
 function startWakeUpTimer() {
+  // Si ya se mostró en esta sesión, no repetir
+  if (sessionStorage.getItem('wakeup-shown')) return;
+
   if (pendingRequests === 0) {
     wakeUpTimer = setTimeout(() => {
       useConnection.getState().setWakingUp(true);
+      // Marcar como mostrado por esta sesión
+      sessionStorage.setItem('wakeup-shown', '1');
     }, WAKE_UP_THRESHOLD_MS);
   }
   pendingRequests++;
@@ -45,15 +51,28 @@ function stopWakeUpTimer() {
 // REQUEST INTERCEPTOR
 // ===========================================
 
+// Solo estos endpoints indican cold start real del backend
+function isWakeUpRelevant(url: string | undefined): boolean {
+  if (!url) return false;
+  return (
+    url.includes('/auth/login') ||
+    url.includes('/auth/register') ||
+    url.includes('/auth/me') ||
+    url.includes('/health')
+  );
+}
+
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = localStorage.getItem('zoe_access_token');
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // Arrancar timer de cold start
-  config.__wakeUpTracked = true;
-  startWakeUpTimer();
+  // Solo trackear si es un endpoint crítico Y no lo mostramos ya
+  if (isWakeUpRelevant(config.url) && !sessionStorage.getItem('wakeup-shown')) {
+    config.__wakeUpTracked = true;
+    startWakeUpTimer();
+  }
 
   return config;
 });
