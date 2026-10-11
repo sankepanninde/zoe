@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { PrismaClient } from '@prisma/client';
 
 const LOCAL_URL = process.env.LOCAL_DATABASE_URL!;

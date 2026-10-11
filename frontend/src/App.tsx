@@ -15,6 +15,8 @@ import { Settings } from '@/pages/Settings';
 import { AppShell } from '@/components/layout/AppShell';
 import { ColdStartBanner } from '@/components/layout/ColdStartBanner';
 import { MustChangePasswordModal } from '@/components/auth/MustChangePasswordModal';
+import { ForgotPassword } from '@/pages/ForgotPassword';
+import { ResetPassword } from '@/pages/ResetPassword';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -95,11 +97,28 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
+
       <Route
         path="/register"
         element={
           <PublicRoute>
             <Register />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <PublicRoute>
+            <ForgotPassword />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <PublicRoute>
+            <ResetPassword />
           </PublicRoute>
         }
       />

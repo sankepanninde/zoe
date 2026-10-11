@@ -60,6 +60,9 @@ export function AssignmentsSection({
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+  const isTechnician = user?.role === 'TECHNICIAN';
+  // Un técnico NUNCA puede asignar (aunque el prop falle)
+  const effectiveReadOnly = readOnly || isTechnician;
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedMinistryId, setSelectedMinistryId] = useState('');
@@ -214,7 +217,7 @@ export function AssignmentsSection({
           )}
         </div>
 
-        {!readOnly && !showAddForm && availableUsers.length > 0 && availableMinistries.length > 0 && (
+        {!effectiveReadOnly && !showAddForm && availableUsers.length > 0 && availableMinistries.length > 0 && (
           <button
             type="button"
             onClick={() => setShowAddForm(true)}
@@ -227,7 +230,7 @@ export function AssignmentsSection({
       </div>
 
       {/* Lista vacía */}
-      {visibleAssignments.length === 0 && !showAddForm && (
+      {visibleAssignments.length === 0 && !showAddForm && !effectiveReadOnly && (
         <div className="rounded-xl border border-dashed border-border bg-surface-elevated/40 p-4 text-center">
           <p className="text-xs text-foreground-muted">
             {isAdmin
@@ -243,7 +246,7 @@ export function AssignmentsSection({
           <AssignmentRow
             key={assignment.id}
             assignment={assignment}
-            readOnly={readOnly}
+            readOnly={effectiveReadOnly}
             onUpdateStatus={(status) =>
               updateMutation.mutate({ id: assignment.id, status })
             }

@@ -31,9 +31,20 @@ export async function authRoutes(app: FastifyInstance) {
     handler: controller.meHandler,
   });
 
-  // Cambiar mi propia contraseña (requiere auth)
+    // Cambiar mi propia contraseña (requiere auth)
   app.patch('/change-password', {
     preHandler: authMiddleware,
     handler: controller.changeOwnPasswordHandler,
+  });
+
+  // Recuperar contraseña (públicas)
+  app.post('/forgot-password', {
+    config: { rateLimit: { max: 3, timeWindow: '15 minutes' } },
+    handler: controller.forgotPasswordHandler,
+  });
+
+  app.post('/reset-password', {
+    config: { rateLimit: { max: 5, timeWindow: '15 minutes' } },
+    handler: controller.resetPasswordHandler,
   });
 }

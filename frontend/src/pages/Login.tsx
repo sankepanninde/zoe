@@ -123,13 +123,12 @@ export function Login() {
                 <label htmlFor="password" className="zoe-label">
                   Contraseña
                 </label>
-                <button
-                  type="button"
+                <Link
+                  to="/forgot-password"
                   className="mb-1.5 text-xs font-medium text-primary hover:underline"
-                  onClick={() => toast.info('Función próximamente')}
                 >
                   ¿Olvidaste tu contraseña?
-                </button>
+                </Link>
               </div>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-subtle" />

@@ -231,24 +231,28 @@ function ServiceBlock({
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <button className="inline-flex items-center gap-1 rounded-full border border-slate-200/60 bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 shadow-sm transition-colors hover:bg-white">
-                    <span
-                      className="material-symbols-outlined text-blue-600"
-                      style={{ fontSize: 12 }}
-                    >
-                      music_note
-                    </span>
-                    Setlist
-                  </button>
-                  <button className="inline-flex items-center gap-1 rounded-full border border-slate-200/60 bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 shadow-sm transition-colors hover:bg-white">
-                    <span
-                      className="material-symbols-outlined text-indigo-500"
-                      style={{ fontSize: 12 }}
-                    >
-                      tune
-                    </span>
-                    Input List ({service.inputListCount ?? 24} ch)
-                  </button>
+                  {!readOnly && (
+                    <>
+                      <button className="inline-flex items-center gap-1 rounded-full border border-slate-200/60 bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 shadow-sm transition-colors hover:bg-white">
+                        <span
+                          className="material-symbols-outlined text-blue-600"
+                          style={{ fontSize: 12 }}
+                        >
+                          music_note
+                        </span>
+                        Setlist
+                      </button>
+                      <button className="inline-flex items-center gap-1 rounded-full border border-slate-200/60 bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 shadow-sm transition-colors hover:bg-white">
+                        <span
+                          className="material-symbols-outlined text-indigo-500"
+                          style={{ fontSize: 12 }}
+                        >
+                          tune
+                        </span>
+                        Input List ({service.inputListCount ?? 24} ch)
+                      </button>
+                    </>
+                  )}
                   <span
                     className={cn(
                       'rounded-full border px-2 py-0.5 text-[11px] font-bold',
@@ -280,15 +284,17 @@ function ServiceBlock({
 
             {/* Técnicos */}
             {service.assignments.length === 0 ? (
-              <button
-                onClick={() => onServiceClick(service)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-blue-200 bg-blue-50/50 py-3 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-50"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                  manage_accounts
-                </span>
-                Gestionar servicio
-              </button>
+              !readOnly && (
+                <button
+                  onClick={() => onServiceClick(service)}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-blue-200 bg-blue-50/50 py-3 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-50"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                    manage_accounts
+                  </span>
+                  Gestionar servicio
+                </button>
+              )
             ) : (
               <ul className="space-y-2.5">
                 {service.assignments.map((a) => (
@@ -301,31 +307,33 @@ function ServiceBlock({
             {/* Footer técnico de reserva + botón editar */}
             {service.assignments.length > 0 && (
               <>
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100/80 pt-3">
-                  <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-3 py-1 shadow-sm">
-                    <span
-                      className="material-symbols-outlined text-blue-600"
-                      style={{ fontSize: 14 }}
-                    >
-                      shield
-                    </span>
-                    <span className="text-[11px] font-medium text-slate-600">
-                      Técnico de Reserva:
-                    </span>
-                    <span className="text-[11px] font-semibold text-slate-700">
-                      Por asignar
-                    </span>
+                {!readOnly && (
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100/80 pt-3">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-3 py-1 shadow-sm">
+                      <span
+                        className="material-symbols-outlined text-blue-600"
+                        style={{ fontSize: 14 }}
+                      >
+                        shield
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-600">
+                        Técnico de Reserva:
+                      </span>
+                      <span className="text-[11px] font-semibold text-slate-700">
+                        Por asignar
+                      </span>
+                    </div>
+                    <button className="inline-flex items-center gap-1 rounded-full border border-slate-200/60 bg-white/80 px-3 py-1 text-[11px] font-medium text-slate-600 shadow-sm transition-colors hover:bg-white">
+                      <span
+                        className="material-symbols-outlined text-slate-500"
+                        style={{ fontSize: 13 }}
+                      >
+                        history_edu
+                      </span>
+                      Bitácora / Novedades
+                    </button>
                   </div>
-                  <button className="inline-flex items-center gap-1 rounded-full border border-slate-200/60 bg-white/80 px-3 py-1 text-[11px] font-medium text-slate-600 shadow-sm transition-colors hover:bg-white">
-                    <span
-                      className="material-symbols-outlined text-slate-500"
-                      style={{ fontSize: 13 }}
-                    >
-                      history_edu
-                    </span>
-                    Bitácora / Novedades
-                  </button>
-                </div>
+                )}
 
                                 {/* Botón Editar — solo si no es readOnly */}
                 {!readOnly && (
