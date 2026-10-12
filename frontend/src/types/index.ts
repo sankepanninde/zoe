@@ -101,6 +101,7 @@ export interface ServiceAssignment {
     name: string;
     email: string;
     position?: string | null;
+    avatarUrl?: string | null;  // ← NUEVO
   };
 }
 

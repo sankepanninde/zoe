@@ -13,6 +13,7 @@ import {
 import { useAuth } from '@/stores/auth.store';
 import { cn, getInitials } from '@/lib/utils';
 import type { Service, ServiceAssignment } from '@/types';
+import { Avatar } from '@/components/ui/Avatar';
 
 const POSITIONS = [
   'FOH (Front of House)',
@@ -399,9 +400,11 @@ function AssignmentRow({
   return (
     <div className="group flex items-center gap-2 rounded-xl border border-border bg-surface px-2.5 py-2 transition-colors hover:border-border-strong">
       {/* Avatar */}
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-[10px] font-bold text-primary-700">
-        {getInitials(assignment.user.name)}
-      </div>
+      <Avatar
+        name={assignment.user.name}
+        avatarUrl={(assignment.user as { avatarUrl?: string | null }).avatarUrl}
+        size="md"
+      />
 
       {/* Info */}
       <div className="min-w-0 flex-1">

@@ -18,6 +18,7 @@ import { listMinistries } from '@/lib/ministries.api';
 import { getApiError } from '@/lib/api';
 import { cn, getInitials } from '@/lib/utils';
 import type { User, UserRole } from '@/types';
+import { Avatar } from '@/components/ui/Avatar';
 
 // ===========================================
 // LABELS
@@ -304,16 +305,12 @@ function UserCard({
     >
       {/* Header */}
       <div className="flex items-start gap-3">
-        <div
-          className={cn(
-            'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-bold',
-            user.active
-              ? 'bg-primary text-white'
-              : 'bg-foreground-subtle/20 text-foreground-subtle'
-          )}
-        >
-          {getInitials(user.name)}
-        </div>
+        <Avatar
+          name={user.name}
+          avatarUrl={user.avatarUrl}
+          size="lg"
+          className={!user.active ? 'opacity-50' : ''}
+        />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{user.name}</p>
           <span
