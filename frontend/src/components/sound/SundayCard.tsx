@@ -1,5 +1,5 @@
 import type { Service, ServiceAssignment } from '@/types';
-import { cn, getInitials } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 
 interface SundayCardProps {

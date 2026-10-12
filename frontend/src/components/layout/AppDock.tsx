@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '@/stores/auth.store';
-import { cn, getInitials } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 
 interface NavItem {
