@@ -11,7 +11,7 @@ import {
   deleteAssignment,
 } from '@/lib/services.api';
 import { useAuth } from '@/stores/auth.store';
-import { cn, getInitials } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import type { Service, ServiceAssignment } from '@/types';
 import { Avatar } from '@/components/ui/Avatar';
 

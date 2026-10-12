@@ -16,7 +16,7 @@ import { UserModal } from '@/components/team/UserModal';
 import { listUsers, deleteUser } from '@/lib/users.api';
 import { listMinistries } from '@/lib/ministries.api';
 import { getApiError } from '@/lib/api';
-import { cn, getInitials } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import type { User, UserRole } from '@/types';
 import { Avatar } from '@/components/ui/Avatar';
 
