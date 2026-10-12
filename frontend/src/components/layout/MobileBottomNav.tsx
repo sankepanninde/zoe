@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '@/stores/auth.store';
 import { cn, getInitials } from '@/lib/utils';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface NavItem {
   to: string;
@@ -110,11 +111,15 @@ export function MobileBottomNav() {
         >
           <span
             className={cn(
-              'flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-[10px] font-bold text-white ring-2 transition-all',
+              'block rounded-full ring-2 transition-all',
               menuOpen ? 'ring-blue-400' : 'ring-slate-600/80'
             )}
           >
-            {getInitials(user?.name ?? 'U')}
+            <Avatar
+              name={user?.name ?? 'U'}
+              avatarUrl={user?.avatarUrl}
+              size="md"
+            />
           </span>
           <span className="text-[10px] font-semibold tracking-tight text-slate-400">
             Perfil
@@ -124,9 +129,11 @@ export function MobileBottomNav() {
         {menuOpen && (
           <div className="animate-fade-in absolute bottom-full right-2 mb-2 w-60 overflow-hidden rounded-2xl border border-slate-700/80 bg-[#0F172A] shadow-2xl ring-1 ring-white/10">
             <div className="flex items-center gap-3 border-b border-slate-700/60 px-4 py-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-xs font-bold text-white">
-                {getInitials(user?.name ?? 'U')}
-              </div>
+              <Avatar
+                name={user?.name ?? 'U'}
+                avatarUrl={user?.avatarUrl}
+                size="lg"
+              />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-white">
                   {user?.name ?? 'Usuario'}

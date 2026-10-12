@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,11 +15,14 @@ import {
   Phone,
   Mail,
   MapPin,
+  Camera,
+  Trash2,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/stores/auth.store';
 import { getApiError, api } from '@/lib/api';
-import { updateOwnProfile } from '@/lib/users.api';
+import { updateOwnProfile, uploadAvatar, deleteAvatar } from '@/lib/users.api';
+import { getInitials } from '@/lib/utils';
 
 // ===========================================
 // SCHEMAS
@@ -63,10 +66,55 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 // ===========================================
 
 export function Settings() {
-  const { user, updateChurch } = useAuth();
+  const { user, updateChurch, updateUser } = useAuth();
   const church = user?.church;
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
   const userMinistries = user?.ministries ?? [];
+
+  // ============ AVATAR ============
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const avatarMutation = useMutation({
+    mutationFn: uploadAvatar,
+    onSuccess: (updatedUser) => {
+      updateUser(updatedUser);
+      toast.success('Foto actualizada');
+    },
+    onError: (err) => toast.error(getApiError(err)),
+  });
+
+  const removeAvatarMutation = useMutation({
+    mutationFn: deleteAvatar,
+    onSuccess: (updatedUser) => {
+      updateUser(updatedUser);
+      toast.success('Foto eliminada');
+    },
+    onError: (err) => toast.error(getApiError(err)),
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tamaño
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('La imagen es muy grande. Máximo 5 MB.');
+      return;
+    }
+
+    // Validar tipo
+    if (!file.type.startsWith('image/')) {
+      toast.error('El archivo debe ser una imagen');
+      return;
+    }
+
+    avatarMutation.mutate(file);
+
+    // Limpiar el input para permitir subir el mismo archivo otra vez
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   // ============ FORM: PERFIL ============
   const {
@@ -90,8 +138,7 @@ export function Settings() {
       }),
     onSuccess: (updatedUser) => {
       toast.success('Perfil actualizado');
-      // Actualizamos el store con el usuario actualizado
-      useAuth.setState((state) => ({ user: { ...state.user!, ...updatedUser } }));
+      updateUser(updatedUser);
       resetProfileForm({
         name: updatedUser.name,
         phone: updatedUser.phone ?? '',
@@ -175,6 +222,92 @@ export function Settings() {
   return (
     <AppLayout title="Ajustes" subtitle="Configuración de tu cuenta">
       <div className="space-y-6">
+        {/* ============================================ */}
+        {/* AVATAR */}
+        {/* ============================================ */}
+        <div className="zoe-card">
+          <h3 className="font-display text-lg font-semibold text-foreground">
+            Mi foto
+          </h3>
+          <p className="mt-1 text-sm text-foreground-muted">
+            Se mostrará en el cronograma y en tus turnos. Máximo 5 MB (JPG, PNG o WebP).
+          </p>
+
+          <div className="mt-5 flex flex-col items-center gap-5 sm:flex-row sm:items-center">
+            {/* Vista previa */}
+            <div className="relative">
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="h-24 w-24 rounded-2xl object-cover ring-2 ring-primary/20"
+                />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-white">
+                  {getInitials(user?.name ?? 'U')}
+                </div>
+              )}
+
+              {avatarMutation.isPending && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 backdrop-blur-sm">
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </div>
+              )}
+            </div>
+
+            {/* Botones */}
+            <div className="flex flex-col gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={avatarMutation.isPending}
+                className="zoe-btn-primary"
+              >
+                {avatarMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Subiendo...
+                  </>
+                ) : (
+                  <>
+                    <Camera className="h-4 w-4" />
+                    {user?.avatarUrl ? 'Cambiar foto' : 'Subir foto'}
+                  </>
+                )}
+              </button>
+
+              {user?.avatarUrl && (
+                <button
+                  type="button"
+                  onClick={() => removeAvatarMutation.mutate()}
+                  disabled={removeAvatarMutation.isPending}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition-all hover:bg-red-100 disabled:opacity-50"
+                >
+                  {removeAvatarMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Eliminando...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" />
+                      Eliminar foto
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* ============================================ */}
         {/* MI PERFIL */}
         {/* ============================================ */}

@@ -354,3 +354,25 @@ export async function getLedMinistryIds(userId: string): Promise<string[]> {
   });
   return led.map((m) => m.ministryId);
 }
+// ===========================================
+// AVATAR
+// ===========================================
+
+export async function updateAvatar(userId: string, avatarUrl: string | null) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+
+  if (!user) {
+    const err = new Error('Usuario no encontrado');
+    (err as Error & { statusCode: number }).statusCode = 404;
+    throw err;
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: { avatarUrl },
+    select: publicUserSelect,
+  });
+}

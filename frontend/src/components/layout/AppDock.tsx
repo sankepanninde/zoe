@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '@/stores/auth.store';
 import { cn, getInitials } from '@/lib/utils';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface NavItem {
   to: string;
@@ -199,16 +200,20 @@ export function AppDock() {
 
         {/* Avatar con menú dropdown */}
         <div className="relative" ref={menuRef}>
-          <button
+                    <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
             title={user?.name ?? 'Usuario'}
             className={cn(
-              'group relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-[10px] font-bold text-white ring-2 transition-transform duration-200 hover:scale-105',
+              'group relative rounded-full ring-2 transition-transform duration-200 hover:scale-105',
               menuOpen ? 'ring-blue-400' : 'ring-slate-600/80'
             )}
           >
-            {getInitials(user?.name ?? 'U')}
+            <Avatar
+              name={user?.name ?? 'U'}
+              avatarUrl={user?.avatarUrl}
+              size="md"
+            />
             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[#0F172A] shadow-[0_0_4px_#10B981]" />
           </button>
 
@@ -217,9 +222,12 @@ export function AppDock() {
             <div className="animate-fade-in absolute bottom-0 left-14 z-50 w-72 overflow-hidden rounded-2xl border border-slate-700/80 bg-[#0F172A] shadow-2xl ring-1 ring-white/10">
               {/* Header: usuario */}
               <div className="flex items-center gap-3 border-b border-slate-700/60 px-4 py-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-sm font-bold text-white ring-2 ring-blue-500/40">
-                  {getInitials(user?.name ?? 'U')}
-                </div>
+                <Avatar
+                  name={user?.name ?? 'U'}
+                  avatarUrl={user?.avatarUrl}
+                  size="lg"
+                  className="ring-2 ring-blue-500/40"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-white">
                     {user?.name ?? 'Usuario'}

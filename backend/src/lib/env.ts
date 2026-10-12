@@ -31,6 +31,13 @@ const envSchema = z.object({
   BREVO_FROM_EMAIL: z.string().default('kevin@example.com'), // email verificado en Brevo
   BREVO_FROM_NAME: z.string().default('Zoe'),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
+
+    // ===========================================
+  // CLOUDINARY (avatares)
+  // ===========================================
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

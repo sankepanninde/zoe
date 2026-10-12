@@ -1,5 +1,6 @@
 import type { Service, ServiceAssignment } from '@/types';
 import { cn, getInitials } from '@/lib/utils';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface SundayCardProps {
   date: Date;
@@ -369,14 +370,12 @@ function AssignmentRow({ assignment }: { assignment: ServiceAssignment }) {
   return (
     <li className="flex items-center justify-between gap-2">
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        <div
-          className={cn(
-            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ring-1 ring-slate-200',
-            isPending ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-700'
-          )}
-        >
-          {getInitials(assignment.user.name)}
-        </div>
+        <Avatar
+          name={assignment.user.name}
+          avatarUrl={(assignment.user as { avatarUrl?: string | null }).avatarUrl}
+          size="sm"
+          ring
+        />
                 <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <p className="truncate text-xs font-semibold text-slate-800">

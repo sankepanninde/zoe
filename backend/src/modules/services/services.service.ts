@@ -29,7 +29,7 @@ export async function listServices(churchId: string, query: ListServicesQuery) {
       assignments: {
         include: {
           user: {
-            select: { id: true, name: true, email: true, position: true },
+            select: { id: true, name: true, email: true, position: true, avatarUrl: true },
           },
           ministry: {
             select: { id: true, name: true, color: true, icon: true },
@@ -48,7 +48,7 @@ export async function getService(churchId: string, id: string) {
       assignments: {
         include: {
           user: {
-            select: { id: true, name: true, email: true, position: true },
+            select: { id: true, name: true, email: true, position: true, avatarUrl: true },
           },
           ministry: {
             select: { id: true, name: true, color: true, icon: true },
@@ -140,7 +140,7 @@ export async function updateService(
       assignments: {
         include: {
           user: {
-            select: { id: true, name: true, email: true, position: true },
+            select: { id: true, name: true, email: true, position: true, avatarUrl: true },
           },
           ministry: {
             select: { id: true, name: true, color: true, icon: true },
@@ -183,7 +183,7 @@ export async function listMyServices(churchId: string, userId: string) {
       assignments: {
         include: {
           user: {
-            select: { id: true, name: true, email: true, position: true },
+            select: { id: true, name: true, email: true, position: true, avatarUrl: true },
           },
           ministry: {
             select: { id: true, name: true, color: true, icon: true },
