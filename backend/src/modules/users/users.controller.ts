@@ -6,6 +6,7 @@ import {
   changePasswordSchema,
   updateOwnProfileSchema,
 } from './users.schemas.js';
+import { uploadAvatar, deleteAvatar } from '../../lib/cloudinary.js';
 
 // ===========================================
 // MIDDLEWARES LOCALES
@@ -213,5 +214,63 @@ export async function updateMeHandler(
 
   const input = updateOwnProfileSchema.parse(request.body);
   const updated = await service.updateOwnProfile(user.id, input);
+  return reply.send({ user: updated });
+}
+// ===========================================
+// AVATAR
+// ===========================================
+
+export async function uploadAvatarHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const user = requireUser(request, reply);
+  if (!user) return;
+
+  const data = await request.file();
+  if (!data) {
+    return reply.status(400).send({
+      statusCode: 400,
+      error: 'Bad Request',
+      message: 'No se recibió ninguna imagen',
+    });
+  }
+
+  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  if (!allowed.includes(data.mimetype)) {
+    return reply.status(400).send({
+      statusCode: 400,
+      error: 'Bad Request',
+      message: 'Formato no permitido. Usa JPG, PNG, WebP o GIF.',
+    });
+  }
+
+  const buffer = await data.toBuffer();
+
+  const MAX_SIZE = 5 * 1024 * 1024;
+  if (buffer.length > MAX_SIZE) {
+    return reply.status(400).send({
+      statusCode: 400,
+      error: 'Bad Request',
+      message: 'La imagen es muy grande. Máximo 5 MB.',
+    });
+  }
+
+  const result = await uploadAvatar(buffer, user.id);
+  const updated = await service.updateAvatar(user.id, result.url);
+
+  return reply.send({ user: updated });
+}
+
+export async function deleteAvatarHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const user = requireUser(request, reply);
+  if (!user) return;
+
+  await deleteAvatar(user.id);
+  const updated = await service.updateAvatar(user.id, null);
+
   return reply.send({ user: updated });
 }

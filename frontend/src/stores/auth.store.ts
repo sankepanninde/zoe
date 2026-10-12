@@ -13,6 +13,7 @@ interface AuthState {
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
   updateChurch: (data: Partial<Church>) => Promise<void>;
+    updateUser: (updates: Partial<User>) => void;
   clearError: () => void;
 }
 
@@ -93,6 +94,10 @@ export const useAuth = create<AuthState>((set, get) => ({
       set({ user: { ...currentUser, church: res.church } });
     }
   },
+    updateUser: (updates) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, ...updates } : null,
+    })),
 
   clearError: () => set({ error: null }),
 }));

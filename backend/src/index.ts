@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
+import multipart from '@fastify/multipart';
 
 import { env } from './lib/env.js';
 import { logger } from './lib/logger.js';
@@ -51,6 +52,12 @@ await app.register(rateLimit, {
     message: 'Demasiadas solicitudes. Intenta de nuevo en un momento.',
   }),
   
+});
+await app.register(multipart, {
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5 MB
+    files: 1,
+  },
 });
 
 // ===========================================

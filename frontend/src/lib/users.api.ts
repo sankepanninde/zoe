@@ -76,3 +76,27 @@ export async function updateOwnProfile(
   const { data } = await api.patch<{ user: User }>('/users/me', payload);
   return data.user;
 }
+// ===========================================
+// AVATAR
+// ===========================================
+
+export async function uploadAvatar(file: File): Promise<User> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const { data } = await api.post<{ user: User }>(
+    '/users/me/avatar',
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return data.user;
+}
+
+export async function deleteAvatar(): Promise<User> {
+  const { data } = await api.delete<{ user: User }>('/users/me/avatar');
+  return data.user;
+}

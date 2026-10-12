@@ -7,8 +7,10 @@ export async function usersRoutes(app: FastifyInstance) {
 
   app.get('/', controller.listHandler);
 
-  // ⚠️ /me va ANTES de /:id (Fastify matchea en orden)
+  // ⚠️ /me va ANTES de /:id
   app.patch('/me', controller.updateMeHandler);
+  app.post('/me/avatar', controller.uploadAvatarHandler);
+  app.delete('/me/avatar', controller.deleteAvatarHandler);
 
   app.get('/:id', controller.getHandler);
   app.post('/', controller.createHandler);
