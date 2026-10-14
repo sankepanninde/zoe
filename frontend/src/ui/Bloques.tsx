@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { rolNombre } from "./PanelRol";
 
 /* Todos los bloques usan las clases de dashboard.html (ámbito .k-dash). */
 
@@ -25,14 +26,22 @@ export function Proximos({ eventos }: { eventos: Evento[] }) {
 /** "rol" cambia el panel por rol; "destino" es el id de la sección a la que se desplaza. */
 export interface HoyItem { id: string; n: number; texto: string; rol?: "TE" | "LE" | "AD"; destino?: string; onVer?: () => void }
 
-export function Hoy({ items }: { items: HoyItem[] }) {
-  if (items.length === 0) return null;
+export function Hoy({ items, vacio }: { items: HoyItem[]; vacio?: string }) {
+  if (items.length === 0) {
+    if (!vacio) return null;
+    return (
+      <div className="card hoy" aria-labelledby="t-hoy">
+        <h2 id="t-hoy">Hoy</h2>
+        <p className="muted">{vacio}</p>
+      </div>
+    );
+  }
   return (
     <div className="card hoy" aria-labelledby="t-hoy">
       <h2 id="t-hoy">Hoy</h2>
       {items.map((h) => (
         <div className="hoy-item" key={h.id}>
-          <span className="num">{h.n}</span>
+          <span className="tag">{h.rol ? rolNombre[h.rol] : "Iglesia"}</span>
           <span>{h.texto}</span>
           <button type="button" className="go" onClick={h.onVer}>Ver</button>
         </div>
@@ -128,7 +137,7 @@ export function PeticionesRestringidas({ peticiones, puedeVer }: { peticiones: P
   return (
     <div>
       <div className="card lock">
-        <p>Peticiones confidenciales.</p>
+        <p>Peticiones de oración.</p>
         <button
           type="button"
           className="btn"

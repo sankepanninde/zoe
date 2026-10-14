@@ -17,7 +17,7 @@ export interface LoginFormProps {
   sessionExpired?: boolean;
   /** Si falla por red, debe lanzar un error: el formulario muestra el aviso de conexión. */
   onSubmit: (data: { correo: string; clave: string }) => Promise<LoginResult>;
-  onProvider?: (provider: "google") => void;
+  onProvider?: (provider: "google" | "microsoft") => void;
   onRecover?: () => void;
   onRequestAccess?: () => void;
   onHelp?: () => void;
