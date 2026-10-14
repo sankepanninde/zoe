@@ -1,0 +1,8 @@
+/* Estilos de la Bandeja. Usa tokens de kit.css. */
+
+.ban-wrap { max-width: 760px; margin: 0 auto; padding: 32px clamp(16px, 4vw, 40px) 56px; display: grid; gap: 24px; }
+.ban-acciones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.ban-acciones .k-btn { width: auto; min-height: 40px; font-size: 14px; padding: 0 18px; }
+.ban-meta { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.item--leido .k-item__title { color: var(--muted); font-weight: 400; }
+.ban-vacio { padding: 32px 0; color: var(--muted); margin: 0; }

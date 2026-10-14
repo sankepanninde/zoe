@@ -30,6 +30,12 @@ const ALL_NAV_ITEMS: NavItem[] = [
     icon: 'assignment_turned_in',
     roles: ['TECHNICIAN', 'LEADER', 'ADMIN', 'SUPER_ADMIN'],
   },
+  {
+    to: '/availability',
+    label: 'Disponible',
+    icon: 'event_busy',
+    roles: ['TECHNICIAN', 'LEADER', 'ADMIN', 'SUPER_ADMIN'],
+  },
 ];
 
 export function MobileBottomNav() {

@@ -17,6 +17,8 @@ import { AuthError } from './modules/auth/auth.service.js';
 import { ZodError } from 'zod';
 import { assignmentsRoutes } from './modules/assignments/assignments.routes.js';
 import { usersRoutes } from './modules/users/users.routes.js';
+import { positionRequirementsRoutes } from './modules/position-requirements/position-requirements.routes.js';
+import { availabilityRoutes } from './modules/availability/availability.routes.js';
 
 const app = Fastify({
   loggerInstance: logger,
@@ -82,6 +84,9 @@ await app.register(servicesRoutes, { prefix: '/api/services' });
 await app.register(assignmentsRoutes, { prefix: '/api/services' });
 await app.register(usersRoutes, { prefix: '/api/users' });
 await app.register(ministriesRoutes, { prefix: '/api/ministries' });
+await app.register(positionRequirementsRoutes, { prefix: '/api/position-requirements' }); 
+await app.register(availabilityRoutes, { prefix: '/api/availability' });
+
 
 // ===========================================
 // MANEJO GLOBAL DE ERRORES

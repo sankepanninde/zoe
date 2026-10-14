@@ -8,6 +8,7 @@ export async function servicesRoutes(app: FastifyInstance) {
   app.get('/', controller.listHandler);
   app.get('/me', controller.listMineHandler);
   app.post('/seed-year', controller.seedYearHandler);
+  app.post('/auto-assign', controller.autoAssignHandler);
   app.get('/:id', controller.getHandler);
   app.post('/', controller.createHandler);
   app.patch('/:id', controller.updateHandler);

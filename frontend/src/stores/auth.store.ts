@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { api, getApiError } from '@/lib/api';
 import type { AuthResponse, Church, User } from '@/types';
+import type { LoginResult } from '@/ui';
 
 interface AuthState {
   user: User | null;
@@ -9,11 +10,17 @@ interface AuthState {
   error: string | null;
 
   login: (email: string, password: string) => Promise<void>;
+  loginWithResult: (data: {
+    correo: string;
+    clave: string;
+    cuenta: 'plataforma' | 'iglesia';
+    codigo?: string;
+  }) => Promise<LoginResult>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
   updateChurch: (data: Partial<Church>) => Promise<void>;
-    updateUser: (updates: Partial<User>) => void;
+  updateUser: (updates: Partial<User>) => void;
   clearError: () => void;
 }
 
@@ -46,6 +53,26 @@ export const useAuth = create<AuthState>((set, get) => ({
       throw new Error(message);
     }
   },
+    loginWithResult: async (data) => {
+    set({ loading: true, error: null });
+    try {
+      const { data: res } = await api.post<AuthResponse>('/auth/login', {
+        email: data.correo,
+        password: data.clave,
+      });
+      localStorage.setItem('zoe_access_token', res.accessToken);
+      set({ token: res.accessToken });
+      await get().loadUser();
+      return { ok: true };
+    } catch (err: unknown) {
+      set({ loading: false });
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401) return { ok: false, reason: 'credenciales' };
+      if (status === 423) return { ok: false, reason: 'bloqueada' };
+      return { ok: false, reason: 'red' };
+    }
+  },
+
 
   register: async (input) => {
     set({ loading: true, error: null });

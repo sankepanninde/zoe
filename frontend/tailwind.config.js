@@ -10,7 +10,7 @@ export default {
       },
       colors: {
         background: 'hsl(var(--background))',
-        surface: 'hsl(var(--surface))',
+        surface: 'hsl(var(--app-surface) / <alpha-value>)',
         'surface-elevated': 'hsl(var(--surface-elevated))',
         border: 'hsl(var(--border))',
         'border-strong': 'hsl(var(--border-strong))',

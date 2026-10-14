@@ -1,0 +1,41 @@
+/* Estilos de Mi disponibilidad. Usa tokens de kit.css. */
+
+.disp-wrap { max-width: 980px; margin: 0 auto; padding: 32px clamp(16px, 4vw, 40px) 56px; display: grid; gap: 20px; }
+.disp-cab { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.disp-cab h1 { margin: 4px 0 0; font-size: clamp(26px, 4vw, 36px); font-weight: 300; letter-spacing: -0.02em; }
+.disp-cab p { margin: 6px 0 0; }
+.disp-acciones { display: flex; gap: 10px; align-items: center; }
+.disp-acciones .k-btn { min-height: 40px; }
+.disp-rango { min-width: 160px; text-align: center; }
+.aviso { font-size: 14px; border-left: 2px solid var(--ok); padding: 6px 0 6px 12px; color: var(--muted); }
+.k-error { color: var(--danger); font-size: 13px; margin: 0; }
+
+/* Semana */
+.disp-semana { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; align-items: start; }
+.disp-dia { border: 1px solid var(--line); border-radius: 14px; background: var(--card-bg); overflow: hidden; min-width: 0; }
+.disp-dia--hoy { border-color: var(--warm); }
+.disp-dia--bloqueado { opacity: .55; }
+.disp-dia__cab { padding: 10px 10px 8px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); }
+.disp-dia__cab b { font-size: 18px; font-weight: 500; color: var(--fg); margin-right: 4px; }
+.disp-dia__cuerpo { display: grid; gap: 6px; padding: 8px; }
+.disp-vacio { font-size: 12px; color: var(--muted); padding: 8px 4px; }
+.disp-srv { display: grid; gap: 2px; text-align: left; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: inherit; cursor: pointer; }
+.disp-srv strong { font-size: 12px; font-weight: 600; line-height: 1.25; }
+.disp-srv small { font-size: 11px; color: var(--muted); }
+.disp-srv[aria-pressed="true"] { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 18%, var(--surface)); }
+.disp-srv:disabled { cursor: not-allowed; }
+.disp-etq { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--warm); }
+.disp-etq--iglesia { color: var(--muted); }
+
+/* Bloqueos */
+.caja { border: 1px solid var(--line); border-radius: 16px; background: var(--card-bg); padding: 20px 22px; display: grid; gap: 14px; }
+.disp-h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.disp-form { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+.disp-form .k-field { min-width: 180px; }
+.disp-form .k-btn { width: auto; min-height: 44px; padding: 0 18px; }
+.disp-fila { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+
+@media (max-width: 760px) {
+  .disp-semana { grid-template-columns: 1fr; }
+  .disp-dia__cuerpo { grid-template-columns: 1fr 1fr; }
+}

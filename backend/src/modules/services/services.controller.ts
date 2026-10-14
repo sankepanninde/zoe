@@ -122,3 +122,21 @@ export async function seedYearHandler(
   const result = await service.seedYearSundays(user.churchId, year);
   return reply.send(result);
 }
+import { autoAssignSchema } from './services.schemas.js';
+
+export async function autoAssignHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const user = requireAdmin(request, reply);
+  if (!user) return;
+
+  const input = autoAssignSchema.parse(request.body);
+  const result = await service.autoAssignMonth(
+    user.churchId,
+    input.year,
+    input.month,
+    input.dryRun
+  );
+  return reply.send(result);
+}

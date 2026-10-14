@@ -1,0 +1,38 @@
+// Punto de entrada del kit. Importar desde "@/ui" o la ruta donde copies la carpeta.
+import "./kit.css";
+
+export { Button } from "./Button";
+export { Field, PasswordField } from "./Field";
+export { Banner } from "./Banner";
+export type { BannerTone } from "./Banner";
+export { Tabs } from "./Tabs";
+export type { TabOption } from "./Tabs";
+export { Providers } from "./Providers";
+export { LoginForm } from "./LoginForm";
+export type { AccountType, LoginFormProps, LoginResult } from "./LoginForm";
+export { Dashboard } from "./Dashboard";
+export type { DashboardProps } from "./Dashboard";
+export { NuevoAnuncio } from "./NuevoAnuncio";
+export type { NuevoAnuncioData } from "./NuevoAnuncio";
+export { Hoy, Proximos, Inscripciones, Turnos, Borradores, PeticionesRestringidas, TablaIglesias, Usuarios } from "./Bloques";
+export type { HoyItem } from "./Bloques";
+export { permisos, roles, rolEtiqueta, permiso, puede } from "./permisos";
+export type { Rol, Nivel, Permiso } from "./permisos";
+export { RolesPanel } from "./RolesPanel";
+export type { RolesPanelProps, UsuarioGestion } from "./RolesPanel";
+export { PanelPorRol } from "./PanelPorRol";
+export type { PanelPorRolProps, TurnoPersonal, CronogramaFila } from "./PanelPorRol";
+export type { Evento, Inscripcion, Turno, Borrador, Peticion, IglesiaResumen, Usuario } from "./Bloques";
+export { Resumen, Barra, Lista, DetalleAnuncio, ordenar } from "./Announcements";
+export type { Announcement, Comment, Priority, Filter } from "./Announcements";
+export { MinisteriosPastor } from "./MinisteriosPastor";
+export type { MinisteriosPastorProps, Ministerio, Horario, Persona, Lider } from "./MinisteriosPastor";
+export { MiMinisterio } from "./MiMinisterio";
+export { Bandeja } from "./Bandeja";
+export type { Aviso, BandejaProps, RolBandeja, TipoAviso } from "./Bandeja";
+export { Cronograma } from "./Cronograma";
+export type { CronogramaProps, Plantilla, Regla, Puntual, PersonaAgenda } from "./Cronograma";
+export { Disponibilidad } from "./Disponibilidad";
+export type { DisponibilidadProps, Servicio, HorarioMinisterio, Bloqueo } from "./Disponibilidad";
+export { AsistenteIglesia } from "./AsistenteIglesia";
+export type { AsistenteIglesiaProps } from "./AsistenteIglesia";

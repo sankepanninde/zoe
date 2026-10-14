@@ -10,7 +10,7 @@ import { SoundSchedule } from '@/pages/SoundSchedule';
 import { SundaysAdmin } from '@/pages/SundaysAdmin';
 import { MySchedule } from '@/pages/MySchedule';
 import { Team } from '@/pages/Team';
-import { Availability } from '@/pages/Availability';
+import { AvailabilityPage } from '@/pages/Availability';
 import { Settings } from '@/pages/Settings';
 import { AppShell } from '@/components/layout/AppShell';
 import { ColdStartBanner } from '@/components/layout/ColdStartBanner';
@@ -171,7 +171,7 @@ function AppRoutes() {
           path="/availability"
           element={
             <ProtectedRoute>
-              <Availability />
+              <AvailabilityPage />
             </ProtectedRoute>
           }
         />
