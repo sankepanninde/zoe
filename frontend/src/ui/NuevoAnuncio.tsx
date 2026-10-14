@@ -9,29 +9,34 @@ export interface NuevoAnuncioData {
   resumen: string;
   cuerpo: string;
   publicarEl: string;
-  publico: "todos" | "roles";
+  publico: "todos" | "roles" | "ministerio";
   roles: string[];
 }
 
 interface NuevoAnuncioProps {
   onGuardar: (data: NuevoAnuncioData) => void;
   onCerrar: () => void;
+  /** "ministerio": el líder solo publica para su ministerio. */
+  alcance?: "iglesia" | "ministerio";
+  ministerio?: string;
+  /** Aviso dentro del formulario si el servidor no publicó el anuncio. */
+  error?: string | null;
 }
 
 const categorias = ["General", "Voluntarios", "Inscripciones", "Células", "Eventos", "Oración"];
-const rolesDisponibles = ["Voluntario", "Líder", "Pastor"];
+const rolesDisponibles = ["Siervo", "Líder", "Pastor"];
 
 type Errores = Partial<Record<"titulo" | "resumen" | "cuerpo", string>>;
 
 /** Formulario de nuevo anuncio, con la estructura de dashboard.html. */
-export function NuevoAnuncio({ onGuardar, onCerrar }: NuevoAnuncioProps) {
+export function NuevoAnuncio({ onGuardar, onCerrar, alcance = "iglesia", ministerio = "", error = null }: NuevoAnuncioProps) {
   const [prioridad, setPrioridad] = useState<Priority>("media");
   const [titulo, setTitulo] = useState("");
   const [categoria, setCategoria] = useState(categorias[0]);
   const [publicarEl, setPublicarEl] = useState(() => new Date().toISOString().slice(0, 10));
   const [resumen, setResumen] = useState("");
   const [cuerpo, setCuerpo] = useState("");
-  const [publico, setPublico] = useState<"todos" | "roles">("todos");
+  const [publico, setPublico] = useState<"todos" | "roles" | "ministerio">(alcance === "ministerio" ? "ministerio" : "todos");
   const [roles, setRoles] = useState<string[]>([]);
   const [errores, setErrores] = useState<Errores>({});
   const tituloRef = useRef<HTMLInputElement>(null);
@@ -149,8 +154,14 @@ export function NuevoAnuncio({ onGuardar, onCerrar }: NuevoAnuncioProps) {
           <div className="field span-2">
             <span className="flabel" id="lbl-publico">Quién lo ve</span>
             <div className="chips" role="group" aria-labelledby="lbl-publico">
-              <button type="button" className="chip" aria-pressed={publico === "todos"} onClick={() => setPublico("todos")}>Todos</button>
-              <button type="button" className="chip" aria-pressed={publico === "roles"} onClick={() => setPublico("roles")}>Roles específicos</button>
+              {alcance === "iglesia" ? (
+                <>
+                  <button type="button" className="chip" aria-pressed={publico === "todos"} onClick={() => setPublico("todos")}>Todos</button>
+                  <button type="button" className="chip" aria-pressed={publico === "roles"} onClick={() => setPublico("roles")}>Roles específicos</button>
+                </>
+              ) : (
+                <button type="button" className="chip" aria-pressed={true}>Mi ministerio{ministerio ? ` · ${ministerio}` : ""}</button>
+              )}
             </div>
             {publico === "roles" && (
               <div className="chips" role="group" aria-label="Roles">
@@ -163,6 +174,8 @@ export function NuevoAnuncio({ onGuardar, onCerrar }: NuevoAnuncioProps) {
             )}
           </div>
         </div>
+
+        {error && <p role="alert" style={{ color: "var(--danger)", margin: "0 0 16px" }}>{error}</p>}
 
         <div className="modal-actions">
           <button type="button" className="btn" onClick={onCerrar}>Cancelar</button>

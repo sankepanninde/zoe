@@ -8,7 +8,8 @@ import "./roles.css";
 
 export type RolVista = "TE" | "LE" | "AD";
 
-export const rolNombre: Record<RolVista, string> = { TE: "Técnico", LE: "Líder", AD: "Admin" };
+/* Roles: TE = Siervo, LE = Líder, AD = Pastor (ve toda la iglesia). El Admin dev usa la vista General. */
+export const rolNombre: Record<RolVista, string> = { TE: "Siervo", LE: "Líder", AD: "Pastor" };
 
 export interface TurnoRol {
   id: string;
@@ -38,6 +39,10 @@ export interface PanelRolProps {
   rol: RolVista;
   datos: DatosRol;
   onAsignar?: (personaId: string) => void;
+  /** Se llama al confirmar un turno, para guardarlo en el backend. */
+  onConfirmar?: (turnoId: string) => void | Promise<void>;
+  /** Se llama al rechazar un turno, para guardarlo en el backend. */
+  onRechazar?: (turnoId: string) => void | Promise<void>;
 }
 
 const saludos: Record<RolVista, { p: string }> = {
@@ -46,17 +51,29 @@ const saludos: Record<RolVista, { p: string }> = {
   AD: { p: "Revisa los turnos sin cubrir de la semana." },
 };
 
-export function PanelRol({ rol, datos, onAsignar }: PanelRolProps) {
+export function PanelRol({ rol, datos, onAsignar, onConfirmar, onRechazar }: PanelRolProps) {
   const [turnos, setTurnos] = useState(datos.misTurnos);
+  const [errorTurno, setErrorTurno] = useState<string | null>(null);
   const pendientes = turnos.filter((t) => t.estado === "pendiente").length;
 
-  function responder(id: string, estado: TurnoRol["estado"]) {
+  async function responder(id: string, estado: TurnoRol["estado"]) {
+    const anterior = turnos;
+    setErrorTurno(null);
     setTurnos((actual) => actual.map((t) => (t.id === id ? { ...t, estado } : t)));
+    try {
+      if (estado === "confirmado") await onConfirmar?.(id);
+      if (estado === "rechazado") await onRechazar?.(id);
+    } catch {
+      // Si el servidor no guarda la respuesta, el turno vuelve a su estado anterior.
+      setTurnos(anterior);
+      setErrorTurno("No se guardó tu respuesta. Intenta de nuevo.");
+    }
   }
 
   const misTurnos = (
     <section className="card" aria-labelledby="mis-turnos">
       <span className="card-title" id="mis-turnos">Mis turnos</span>
+      {errorTurno && <p role="alert" style={{ color: "var(--danger)", margin: "8px 0 0" }}>{errorTurno}</p>}
       <ul className="rows">
         {turnos.map((t) => (
           <li className="row" key={t.id}>
