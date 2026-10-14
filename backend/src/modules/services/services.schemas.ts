@@ -30,3 +30,11 @@ export const listServicesQuerySchema = z.object({
 export type CreateServiceInput = z.infer<typeof createServiceSchema>;
 export type UpdateServiceInput = z.infer<typeof updateServiceSchema>;
 export type ListServicesQuery = z.infer<typeof listServicesQuerySchema>;
+
+export const autoAssignSchema = z.object({
+  year: z.coerce.number().int().min(2024).max(2100),
+  month: z.coerce.number().int().min(0).max(11),
+  dryRun: z.boolean().default(true),
+});
+
+export type AutoAssignInput = z.infer<typeof autoAssignSchema>;

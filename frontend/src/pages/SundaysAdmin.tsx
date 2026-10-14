@@ -8,13 +8,16 @@ import {
   CheckCircle2,
   Clock,
   Users,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ServiceModal } from '@/components/calendar/ServiceModal';
 import { listServices, listServiceTypes, seedYear } from '@/lib/services.api';
 import { useAuth } from '@/stores/auth.store';
-import type { Service } from '@/types';
+import type { Service, ServiceType } from '@/types';
 import { cn } from '@/lib/utils';
+import { RequirementsModal } from '@/components/sound/RequirementsModal';
+import { AutoAssignModal } from '@/components/sound/AutoAssignModal';
 
 type FilterMode = 'all' | 'vacant' | 'partial' | 'complete';
 
@@ -34,6 +37,9 @@ export function SundaysAdmin() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [requirementsModalOpen, setRequirementsModalOpen] = useState(false);
+  const [selectedServiceType, setSelectedServiceType] = useState<ServiceType | null>(null);
+  const [autoAssignModalOpen, setAutoAssignModalOpen] = useState(false);
 
   // ============ QUERIES ============
   const { data: services = [], isLoading, refetch } = useQuery({
@@ -191,6 +197,39 @@ export function SundaysAdmin() {
               </button>
             </div>
 
+                        {/* Configurar requisitos */}
+            <button
+              type="button"
+              onClick={() => {
+                const defaultType = serviceTypes.find(
+                  (t) => t.name === 'Culto Dominical'
+                );
+                if (defaultType) {
+                  setSelectedServiceType(defaultType);
+                  setRequirementsModalOpen(true);
+                } else if (serviceTypes.length > 0) {
+                  setSelectedServiceType(serviceTypes[0]!);
+                  setRequirementsModalOpen(true);
+                } else {
+                  toast.error('Primero crea un tipo de servicio');
+                }
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50"
+            >
+              <SettingsIcon className="h-4 w-4" />
+              Requisitos
+            </button>
+
+            {/* Auto-asignar */}
+            <button
+              type="button"
+              onClick={() => setAutoAssignModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 shadow-sm transition-all hover:bg-violet-100"
+            >
+              <Sparkles className="h-4 w-4" />
+              Auto-asignar
+            </button>
+
             {/* Generate button */}
             <button
               type="button"
@@ -270,6 +309,25 @@ export function SundaysAdmin() {
         serviceTypes={serviceTypes}
         onClose={handleCloseModal}
         onSuccess={handleSuccess}
+      />
+
+      <RequirementsModal
+        open={requirementsModalOpen}
+        serviceType={selectedServiceType}
+        onClose={() => {
+          setRequirementsModalOpen(false);
+          setSelectedServiceType(null);
+        }}
+      />
+
+      <AutoAssignModal
+        open={autoAssignModalOpen}
+        year={year}
+        month={new Date().getMonth()}
+        monthName={
+          new Intl.DateTimeFormat('es-CO', { month: 'long' }).format(new Date())
+        }
+        onClose={() => setAutoAssignModalOpen(false)}
       />
     </div>
   );

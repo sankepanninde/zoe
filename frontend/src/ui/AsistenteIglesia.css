@@ -1,0 +1,32 @@
+/* Estilos del asistente de configuración. Usa tokens de kit.css. */
+
+.asi-wrap { max-width: 720px; margin: 0 auto; padding: 32px clamp(16px, 4vw, 40px) 56px; display: grid; gap: 22px; }
+.asi-cab h1 { margin: 4px 0 6px; font-size: clamp(28px, 5vw, 40px); font-weight: 300; letter-spacing: -0.02em; }
+.asi-cab p { margin: 0; }
+.asi-progreso { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.asi-progreso span { height: 6px; border-radius: 999px; background: var(--line); }
+.asi-progreso span.on { background: linear-gradient(90deg, var(--ok), var(--warm)); }
+.caja { border: 1px solid var(--line); border-radius: 18px; background: var(--card-bg); padding: 22px; display: grid; gap: 16px; }
+.asi-paso { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.caja h2 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: -0.01em; }
+.asi-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.asi-opcion { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; font-size: 15px; }
+.asi-opcion:has(input:checked) { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 8%, transparent); }
+.asi-opcion input { margin-top: 3px; accent-color: var(--ok); width: 17px; height: 17px; }
+.asi-opcion small { display: block; color: var(--muted); font-size: 13px; }
+.asi-lista { display: grid; gap: 10px; }
+.asi-fila { display: grid; grid-template-columns: 1fr 130px auto; gap: 10px; align-items: end; }
+.asi-fila--reu { grid-template-columns: 1fr 1fr 130px; }
+.asi-fila--min { grid-template-columns: 1fr auto; }
+.asi-quitar { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 999px; padding: 8px 14px; cursor: pointer; font: inherit; font-size: 13px; }
+.asi-quitar:hover { color: var(--danger); border-color: var(--danger); }
+.asi-btn { border: 0; border-radius: 999px; padding: 12px 22px; font: inherit; font-weight: 600; cursor: pointer; background: var(--ink); color: var(--ink-fg); }
+.asi-btn--ghost { background: none; color: var(--fg); border: 1px solid var(--line); font-weight: 500; }
+.asi-acciones { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.asi-ayuda { font-size: 13px; color: var(--muted); margin: 0; }
+.asi-err { color: var(--danger); font-size: 13px; margin: 0; min-height: 1em; }
+.asi-resumen { display: grid; }
+.asi-resumen > div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); font-size: 15px; }
+.asi-resumen small { color: var(--muted); font-size: 13px; text-align: right; }
+.asi-exito { border-left: 3px solid var(--ok); padding: 10px 14px; color: var(--muted); font-size: 14px; }
+@media (max-width: 560px) { .asi-fila, .asi-fila--reu { grid-template-columns: 1fr 1fr; } }

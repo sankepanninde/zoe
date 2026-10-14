@@ -146,3 +146,96 @@ export async function seedYear(year: number): Promise<SeedYearResult> {
   const { data } = await api.post<SeedYearResult>('/services/seed-year', { year });
   return data;
 }
+// ===========================================
+// POSITION REQUIREMENTS
+// ===========================================
+
+export type Shift = 'MORNING' | 'AFTERNOON';
+
+export interface PositionRequirement {
+  id: string;
+  serviceTypeId: string;
+  shift: Shift;
+  position: string;
+  count: number;
+  serviceType: { id: string; name: string; color: string; icon: string | null };
+}
+
+export interface RequirementInput {
+  position: string;
+  count: number;
+}
+
+export async function listRequirements(
+  serviceTypeId?: string
+): Promise<PositionRequirement[]> {
+  const { data } = await api.get<{ requirements: PositionRequirement[] }>(
+    '/position-requirements',
+    { params: serviceTypeId ? { serviceTypeId } : {} }
+  );
+  return data.requirements;
+}
+
+export async function bulkUpsertRequirements(payload: {
+  serviceTypeId: string;
+  shift: Shift;
+  requirements: RequirementInput[];
+}): Promise<PositionRequirement[]> {
+  const { data } = await api.post<{ requirements: PositionRequirement[] }>(
+    '/position-requirements/bulk',
+    payload
+  );
+  return data.requirements;
+}
+
+export async function deleteRequirement(id: string): Promise<void> {
+  await api.delete(`/position-requirements/${id}`);
+}
+
+// ===========================================
+// AUTO-ASSIGN
+// ===========================================
+
+export interface AutoAssignProposal {
+  serviceId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  title: string | null;
+  serviceTypeName: string;
+  shift: Shift;
+  assignments: Array<{
+    position: string;
+    userId: string;
+    userName: string;
+    ministryId: string;
+    ministryName: string;
+  }>;
+  unassigned: Array<{ position: string; reason: string }>;
+  existingAssignments: number;
+}
+
+export interface AutoAssignResult {
+  year: number;
+  month: number;
+  dryRun: boolean;
+  preview: AutoAssignProposal[];
+  summary: {
+    servicesProcessed: number;
+    assignmentsCreated: number;
+    positionsSkipped: number;
+    positionsUnassigned: number;
+  };
+}
+
+export async function autoAssign(payload: {
+  year: number;
+  month: number;
+  dryRun: boolean;
+}): Promise<AutoAssignResult> {
+  const { data } = await api.post<AutoAssignResult>(
+    '/services/auto-assign',
+    payload
+  );
+  return data;
+}

@@ -1,0 +1,305 @@
+// Gestión eclesial · esquema Prisma para PostgreSQL (Neon).
+// Roles: SUPER_ADMIN = Admin dev (dueño de la app), ADMIN = Pastor,
+//        LEADER = Líder, TECHNICIAN = Siervo.
+// Reglas que este esquema sostiene:
+//  * Cada iglesia está aislada: casi todas las tablas llevan churchId.
+//  * Los servicios se crean solos al agregar servidores al cronograma (RosterEntry).
+//  * LEADER ve y gestiona solo los ministerios de UserMinistry.
+//  * TECHNICIAN ve solo su ministerio y solo lectura del cronograma; confirma o rechaza sus turnos.
+//  * Impersonar (SUPER_ADMIN) queda registrado en AuditLog.
+//
+// Pendiente en la migración SQL (Prisma no lo expresa):
+//   ALTER TABLE users ADD CONSTRAINT chk_superadmin_sin_iglesia
+//     CHECK (role = 'SUPER_ADMIN' OR church_id IS NOT NULL);
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  LEADER
+  TECHNICIAN
+}
+
+enum Priority {
+  ALTA
+  MEDIA
+  BAJA
+}
+
+enum Audience {
+  TODOS
+  ROLES
+  MINISTERIO
+}
+
+enum AnnouncementStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ServiceStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+}
+
+enum ServiceSource {
+  AUTO
+  MANUAL
+}
+
+enum RosterStatus {
+  ASIGNADO
+  CONFIRMADO
+  RECHAZADO
+}
+
+model Church {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique @db.VarChar(20) // código del login de iglesia, ej. IBP-0421
+  name      String   @db.VarChar(150)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ministries    Ministry[]
+  users         User[]
+  serviceTypes  ServiceType[]
+  services      Service[]
+  rosterEntries RosterEntry[]
+  announcements Announcement[]
+
+  @@map("churches")
+}
+
+model Ministry {
+  id       Int     @id @default(autoincrement())
+  churchId Int     @map("church_id")
+  name     String  @db.VarChar(100) // Sonido, Video, Alabanza, Recepción…
+  active   Boolean @default(true)
+
+  church        Church          @relation(fields: [churchId], references: [id])
+  users         UserMinistry[]
+  rosterEntries RosterEntry[]
+  announcements Announcement[]
+
+  @@unique([churchId, name], map: "uq_ministry_church_name")
+  @@map("ministries")
+}
+
+// SUPER_ADMIN no pertenece a una iglesia: churchId puede ser null solo para ese rol.
+model User {
+  id                 Int      @id @default(autoincrement())
+  churchId           Int?     @map("church_id")
+  role               Role
+  fullName           String   @map("full_name") @db.VarChar(150)
+  email              String   @unique @db.VarChar(190)
+  phone              String?  @db.VarChar(30)  // dato sensible: solo SUPER_ADMIN y ADMIN
+  address            String?  @db.VarChar(255) // dato sensible: solo SUPER_ADMIN y ADMIN
+  passwordHash       String   @map("password_hash") @db.VarChar(255) // argon2id o bcrypt
+  mustChangePassword Boolean  @default(false) @map("must_change_password")
+  active             Boolean  @default(true)
+  lastLoginAt        DateTime? @map("last_login_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  church              Church?              @relation(fields: [churchId], references: [id])
+  ministries          UserMinistry[]
+  rosterEntries       RosterEntry[]        @relation("RosterUser")
+  rosterAssigned      RosterEntry[]        @relation("RosterAssigner")
+  servicesCreated     Service[]            @relation("ServiceCreator")
+  announcements       Announcement[]       @relation("AnnouncementAuthor")
+  announcementReads   AnnouncementRead[]
+  comments            Comment[]
+  resetTokens         PasswordResetToken[]
+  auditActions        AuditLog[]           @relation("AuditActor")
+  auditImpersonations AuditLog[]           @relation("AuditImpersonated")
+
+  @@index([churchId, role], map: "idx_users_church_role")
+  @@map("users")
+}
+
+// Un técnico o líder puede pertenecer a varios ministerios.
+// esLider = true indica que dirige ese ministerio (LEADER).
+model UserMinistry {
+  userId     Int     @map("user_id")
+  ministryId Int     @map("ministry_id")
+  esLider    Boolean @default(false) @map("es_lider")
+
+  user     User     @relation(fields: [userId], references: [id])
+  ministry Ministry @relation(fields: [ministryId], references: [id])
+
+  @@id([userId, ministryId])
+  @@index([ministryId], map: "idx_um_ministry")
+  @@map("user_ministries")
+}
+
+// Tipo de servicio: plantilla recurrente (ej. Domingo 9:00 a. m.).
+model ServiceType {
+  id          Int      @id @default(autoincrement())
+  churchId    Int      @map("church_id")
+  name        String   @db.VarChar(100)
+  weekday     Int      @db.SmallInt // 1 = lunes … 7 = domingo
+  startTime   DateTime @map("start_time") @db.Time(0)
+  durationMin Int      @default(120) @map("duration_min") @db.SmallInt
+  active      Boolean  @default(true)
+
+  church   Church    @relation(fields: [churchId], references: [id])
+  services Service[]
+
+  @@map("service_types")
+}
+
+// Servicios concretos. Se crean automáticamente cuando se asigna el primer servidor
+// a un tipo de servicio en una fecha. Por eso la unicidad evita duplicados.
+model Service {
+  id            Int           @id @default(autoincrement())
+  churchId      Int           @map("church_id")
+  serviceTypeId Int           @map("service_type_id")
+  startsAt      DateTime      @map("starts_at")
+  status        ServiceStatus @default(PUBLISHED)
+  source        ServiceSource @default(AUTO)
+  createdById   Int?          @map("created_by") // null cuando se crea automáticamente
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  church      Church       @relation(fields: [churchId], references: [id])
+  serviceType ServiceType  @relation(fields: [serviceTypeId], references: [id])
+  createdBy   User?        @relation("ServiceCreator", fields: [createdById], references: [id])
+  roster      RosterEntry[]
+
+  @@unique([churchId, serviceTypeId, startsAt], map: "uq_service_slot")
+  @@index([churchId, startsAt], map: "idx_svc_church_date")
+  @@map("services")
+}
+
+// Cronograma: quién sirve en qué servicio y en qué ministerio.
+// Al crear una fila aquí, la aplicación crea el Service si no existe (misma transacción).
+model RosterEntry {
+  id           Int          @id @default(autoincrement())
+  churchId     Int          @map("church_id") // copiado para aislamiento y consultas rápidas
+  serviceId    Int          @map("service_id")
+  ministryId   Int          @map("ministry_id")
+  userId       Int          @map("user_id")
+  status       RosterStatus @default(ASIGNADO)
+  respondedAt  DateTime?    @map("responded_at")
+  assignedById Int          @map("assigned_by") // ADMIN o LEADER que asignó
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  church     Church   @relation(fields: [churchId], references: [id])
+  service    Service  @relation(fields: [serviceId], references: [id])
+  ministry   Ministry @relation(fields: [ministryId], references: [id])
+  user       User     @relation("RosterUser", fields: [userId], references: [id])
+  assignedBy User     @relation("RosterAssigner", fields: [assignedById], references: [id])
+
+  @@unique([serviceId, ministryId, userId], map: "uq_roster")
+  @@index([userId, status], map: "idx_roster_user")
+  @@index([ministryId, serviceId], map: "idx_roster_ministry")
+  @@map("roster_entries")
+}
+
+// Anuncios del panel.
+model Announcement {
+  id          Int                @id @default(autoincrement())
+  churchId    Int                @map("church_id")
+  authorId    Int                @map("author_id")
+  priority    Priority           @default(MEDIA)
+  category    String             @default("General") @db.VarChar(60)
+  title       String             @db.VarChar(200)
+  summary     String             @db.VarChar(255)
+  body        String             @db.Text
+  audience    Audience           @default(TODOS)
+  ministryId  Int?               @map("ministry_id") // solo si audience = MINISTERIO
+  status      AnnouncementStatus @default(PUBLISHED)
+  publishAt   DateTime           @map("publish_at")
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  church    Church             @relation(fields: [churchId], references: [id])
+  author    User               @relation("AnnouncementAuthor", fields: [authorId], references: [id])
+  ministry  Ministry?          @relation(fields: [ministryId], references: [id])
+  roles     AnnouncementRole[]
+  reads     AnnouncementRead[]
+  comments  Comment[]
+
+  @@index([churchId, status, publishAt], map: "idx_ann_church_status")
+  @@map("announcements")
+}
+
+// Roles a los que va dirigido un anuncio cuando audience = ROLES.
+model AnnouncementRole {
+  announcementId Int  @map("announcement_id")
+  role           Role
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@id([announcementId, role])
+  @@map("announcement_roles")
+}
+
+// Lecturas por usuario: marcar como leído.
+model AnnouncementRead {
+  announcementId Int      @map("announcement_id")
+  userId         Int      @map("user_id")
+  readAt         DateTime @default(now()) @map("read_at")
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@id([announcementId, userId])
+  @@index([userId], map: "idx_annread_user")
+  @@map("announcement_reads")
+}
+
+model Comment {
+  id             Int      @id @default(autoincrement())
+  announcementId Int      @map("announcement_id")
+  userId         Int      @map("user_id")
+  body           String   @db.VarChar(1000)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([announcementId, createdAt], map: "idx_cmt_ann")
+  @@map("comments")
+}
+
+// Tokens para resetear contraseña. Se guarda solo el hash del token.
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  tokenHash String    @map("token_hash") @db.Char(64)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "idx_prt_user")
+  @@map("password_reset_tokens")
+}
+
+// Registro de acciones sensibles, incluido "Ver como otro usuario" (impersonación).
+model AuditLog {
+  id                   Int      @id @default(autoincrement())
+  actorId              Int      @map("actor_id")
+  impersonatedUserId   Int?     @map("impersonated_user_id")
+  churchId             Int?     @map("church_id")
+  action               String   @db.VarChar(80) // ej. 'impersonate.start', 'user.role_change'
+  entity               String?  @db.VarChar(60)
+  entityId             Int?     @map("entity_id")
+  ip                   String?  @db.VarChar(45)
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  actor        User  @relation("AuditActor", fields: [actorId], references: [id])
+  impersonated User? @relation("AuditImpersonated", fields: [impersonatedUserId], references: [id])
+
+  @@index([actorId, createdAt], map: "idx_audit_actor")
+  @@map("audit_log")
+}

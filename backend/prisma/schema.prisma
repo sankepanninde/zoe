@@ -36,6 +36,7 @@ model Church {
   auditLogs      AuditLog[]
   refreshTokens  RefreshToken[]
   ministries     Ministry[]
+  positionRequirements PositionRequirement[]
 
   @@index([slug])
   @@index([active])
@@ -132,7 +133,8 @@ model ServiceType {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  services    Service[]
+  services             Service[]
+  positionRequirements PositionRequirement[]
 
   @@unique([churchId, name])
   @@index([churchId])
@@ -308,3 +310,34 @@ model UserMinistry {
   @@index([ministryId])
   @@index([isLeader])
 } 
+// ===========================================
+// REQUISITOS DE POSICIÓN POR TIPO DE SERVICIO
+// ===========================================
+
+model PositionRequirement {
+  id            String   @id @default(cuid())
+  churchId      String
+  church        Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  serviceTypeId String
+  serviceType   ServiceType @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
+
+  // Turno: matutino (1er) o vespertino (2do)
+  shift         Shift    @default(MORNING)
+  
+  // Posición requerida: FOH, Monitores, Streaming, etc.
+  position      String
+  count         Int      @default(1)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([serviceTypeId, shift, position])
+  @@index([churchId])
+  @@index([serviceTypeId])
+}
+
+enum Shift {
+  MORNING    // 1er turno (mañana)
+  AFTERNOON  // 2do turno (tarde)
+}

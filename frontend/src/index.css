@@ -7,7 +7,7 @@
 @layer base {
   :root {
     --background: 40 24% 96%;
-    --surface: 0 0% 100%;
+    --app-surface: 0 0% 100%;
     --surface-elevated: 40 20% 98%;
     --border: 40 12% 88%;
     --border-strong: 40 10% 80%;
@@ -18,7 +18,7 @@
 
   .dark {
     --background: 20 14% 4%;
-    --surface: 20 14% 9%;
+    --app-surface: 20 14% 9%;
     --surface-elevated: 20 14% 12%;
     --border: 20 8% 18%;
     --border-strong: 20 8% 24%;
@@ -212,4 +212,11 @@
     rgba(219, 234, 254, 0.6) 0%,
     rgba(248, 250, 255, 0) 70%
   );
+}
+/* El kit usa Manrope en títulos; Tailwind pone Fraunces que gana por defecto */
+.k-app h1,
+.k-app h2,
+.k-app h3,
+.k-app h4 {
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
 }

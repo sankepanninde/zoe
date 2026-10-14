@@ -41,6 +41,12 @@ const ALL_NAV_ITEMS: NavItem[] = [
     badge: 'violet',
   },
   {
+    to: '/availability',
+    label: 'Disponibilidad',
+    icon: 'event_busy',
+    roles: ['TECHNICIAN', 'LEADER', 'ADMIN', 'SUPER_ADMIN'],
+  },
+  {
     to: '/team',
     label: 'Equipo',
     icon: 'group',
