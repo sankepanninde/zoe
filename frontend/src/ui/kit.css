@@ -18,7 +18,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--surface);
   color: var(--fg);
   font: 400 15px/1.55 "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -318,7 +318,7 @@ select option:checked, select option:hover { background: var(--ink); color: var(
 .k-input:-webkit-autofill,
 .k-input:-webkit-autofill:hover,
 .k-input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px var(--bg) inset;
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
   -webkit-text-fill-color: var(--fg);
   caret-color: var(--fg);
   font-family: inherit;
@@ -384,3 +384,11 @@ select option:checked, select option:hover { background: var(--ink); color: var(
 }
 .k-disp__form .k-field:nth-child(3) { grid-column: 1 / -1; }
 .k-disp__horas { display: block; font-size: 11px; font-weight: 400; letter-spacing: 0.02em; text-transform: none; margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+.k-page--compacta { padding-block: 12px; }
+.k-page--compacta .k-page__top { display: none; }
+.k-page--compacta .k-login-card { gap: 10px; padding: 16px 32px; }
+.k-page--compacta .k-heading h1 { font-size: 28px; }
+.k-page--compacta .k-heading p { display: none; }
+.k-page--compacta .k-provider { padding-block: 8px; }
+.k-page--compacta .k-input { font-size: 15px; }
