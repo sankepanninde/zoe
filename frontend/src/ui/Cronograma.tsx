@@ -280,7 +280,7 @@ export function Cronograma({
             <span key={h} style={{ top: (h * 60 - 420) * 40 / 60 }}>{pad(h)}:00</span>
           ))}
         </div>
-        {dias.map((d, i) => {
+        {dias.map((d) => {
           const f = iso(d);
           return (
             <div key={f} className="cal__col">
