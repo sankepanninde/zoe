@@ -14,6 +14,23 @@
     --foreground: 24 10% 10%;
     --foreground-muted: 24 6% 35%;
     --foreground-subtle: 24 5% 50%;
+      /* Fey: tokens del sistema de diseño (solo para la pantalla de disponibilidad y componentes que los usen) */
+  --fey-white: #ffffff;
+  --fey-ink: #0b0b0b;
+  --fey-charcoal: #191919;
+  --fey-obsidian: #131313;
+  --fey-graphite: #868f97;
+  --fey-mist: #cccccc;
+  --fey-smoke: #525252;
+  --fey-pale: #e6e6e6;
+  --fey-ash: #999999;
+  --fey-ember: #ffa16c;
+  --fey-signal: #479ffa;
+  --fey-growth: #4ebe96;
+  --fey-abyss: #000000;
+  --fey-shadow-xl: rgba(0, 0, 0, 0.8) 0px 0px 44px 0px;
+  --fey-shadow-md: rgba(255, 255, 255, 0.25) 0px 0px 14px 0px;
+  --fey-font: 'Manrope', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
 
   .dark {

@@ -7,6 +7,30 @@ export default {
       fontFamily: {
         sans: ['Manrope', 'system-ui', 'sans-serif'],
         display: ['Fraunces', 'serif'],
+        colors: {
+  fey: {
+    white: '#ffffff',
+    ink: '#0b0b0b',
+    charcoal: '#191919',
+    obsidian: '#131313',
+    graphite: '#868f97',
+    mist: '#cccccc',
+    smoke: '#525252',
+    pale: '#e6e6e6',
+    ash: '#999999',
+    ember: '#ffa16c',
+    signal: '#479ffa',
+    growth: '#4ebe96',
+    abyss: '#000000',
+  },
+},
+boxShadow: {
+  'fey-xl': 'rgba(0, 0, 0, 0.8) 0px 0px 44px 0px',
+  'fey-md': 'rgba(255, 255, 255, 0.25) 0px 0px 14px 0px',
+},
+fontFamily: {
+  fey: ['Manrope', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+},
       },
       colors: {
         background: 'hsl(var(--background))',
