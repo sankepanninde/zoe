@@ -77,6 +77,8 @@ model User {
 
   assignments    Assignment[]
   availabilities Availability[]
+  availabilityServices AvailabilityService[]
+  availabilityBlocks   AvailabilityBlock[]
   refreshTokens  RefreshToken[]
   auditLogs      AuditLog[]
   ministries     UserMinistry[]
@@ -174,6 +176,8 @@ model Service {
   updatedAt     DateTime      @updatedAt
 
   assignments   Assignment[]
+  availabilityServices AvailabilityService[]
+
 
   @@index([churchId])
   @@index([churchId, date])
@@ -238,6 +242,48 @@ model Availability {
   @@unique([userId, date])
   @@index([userId])
   @@index([date])
+}
+
+// ===========================================
+// DISPONIBILIDAD POR SERVICIO
+// ===========================================
+
+enum AvailabilityState {
+  DISPONIBLE
+  NO_DISPONIBLE
+}
+
+model AvailabilityService {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceId String
+  service   Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  estado    AvailabilityState
+
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([userId, serviceId])
+  @@index([userId])
+  @@index([serviceId])
+}
+
+model AvailabilityBlock {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  desde     DateTime
+  hasta     DateTime
+  motivo    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, desde, hasta])
 }
 
 // ===========================================

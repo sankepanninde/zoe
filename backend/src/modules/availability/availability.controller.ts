@@ -3,6 +3,10 @@ import * as service from './availability.service.js';
 import {
   toggleDaySchema,
   bulkToggleSchema,
+  listServicesQuerySchema,
+  setServiceStateSchema,
+  setDayStateSchema,
+  createBlockSchema,
 } from './availability.schemas.js';
 
 function requireUser(request: FastifyRequest, reply: FastifyReply) {
@@ -125,4 +129,90 @@ export async function listUserHandler(
     month
   );
   return reply.send({ availability });
+}
+
+// ===========================================
+// NUEVOS ENDPOINTS
+// ===========================================
+
+export async function listServicesHandler(
+  request: FastifyRequest<{ Querystring: { desde: string; hasta: string } }>,
+  reply: FastifyReply
+) {
+  const user = requireUser(request, reply);
+  if (!user) return;
+
+  const input = listServicesQuerySchema.parse(request.query);
+  const result = await service.listServicesWithAvailability(
+    user.id,
+    input.desde,
+    input.hasta
+  );
+  return reply.send(result);
+}
+
+export async function setServiceStateHandler(
+  request: FastifyRequest<{
+    Params: { serviceId: string };
+    Body: { estado: 'DISPONIBLE' | 'NO_DISPONIBLE' | null };
+  }>,
+  reply: FastifyReply
+) {
+  const user = requireUser(request, reply);
+  if (!user) return;
+
+  const input = setServiceStateSchema.parse(request.body);
+  const result = await service.setServiceState(
+    user.id,
+    request.params.serviceId,
+    input.estado
+  );
+  return reply.send(result);
+}
+
+export async function setDayStateHandler(
+  request: FastifyRequest<{
+    Params: { fecha: string };
+    Body: { estado: 'DISPONIBLE' | 'NO_DISPONIBLE' };
+  }>,
+  reply: FastifyReply
+) {
+  const user = requireUser(request, reply);
+  if (!user) return;
+
+  const input = setDayStateSchema.parse(request.body);
+  const result = await service.setDayState(
+    user.id,
+    request.params.fecha,
+    input.estado
+  );
+  return reply.send(result);
+}
+
+export async function createBlockHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const user = requireUser(request, reply);
+  if (!user) return;
+
+  const input = createBlockSchema.parse(request.body);
+  const block = await service.createBlock(
+    user.id,
+    input.desde,
+    input.hasta,
+    input.motivo
+  );
+  return reply.status(201).send({ block });
+}
+
+export async function deleteBlockHandler(
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) {
+  const user = requireUser(request, reply);
+  if (!user) return;
+
+  await service.deleteBlock(user.id, request.params.id);
+  return reply.status(204).send();
 }
