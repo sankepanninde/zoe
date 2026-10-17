@@ -41,6 +41,6 @@ export type { Aviso, BandejaProps, RolBandeja, TipoAviso } from "./Bandeja";
 export { Cronograma } from "./Cronograma";
 export type { CronogramaProps, Plantilla, Regla, Puntual, PersonaAgenda } from "./Cronograma";
 export { Disponibilidad } from "./Disponibilidad";
-export type { DisponibilidadProps, Servicio, HorarioMinisterio, Bloqueo } from "./Disponibilidad";
+export type { DisponibilidadProps } from "./Disponibilidad";
 export { AsistenteIglesia } from "./AsistenteIglesia";
 export type { AsistenteIglesiaProps } from "./AsistenteIglesia";
