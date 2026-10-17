@@ -26,6 +26,25 @@ const app = Fastify({
   bodyLimit: 1 * 1024 * 1024,
 });
 
+// ── Content-Type parser tolerante a body vacío en DELETE ──
+app.removeContentTypeParser('application/json');
+app.addContentTypeParser(
+  'application/json',
+  { parseAs: 'string' },
+  (_req, body, done) => {
+    const str = (body as string).trim();
+    if (str.length === 0) {
+      done(null, {});
+      return;
+    }
+    try {
+      done(null, JSON.parse(str));
+    } catch (err) {
+      done(err as Error, undefined);
+    }
+  }
+);
+
 // ===========================================
 // PLUGINS DE SEGURIDAD
 // ===========================================
