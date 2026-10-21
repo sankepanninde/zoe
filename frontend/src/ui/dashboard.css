@@ -4,13 +4,13 @@
 .k-dash .mark { font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; font-size: 12px; }
 .k-dash .who { display: flex; align-items: center; gap: 14px; font-size: 13px; color: var(--muted); }
 .k-dash .avatar { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-size: 12px; font-weight: 600; color: var(--fg); }
-.k-dash .seg { display: inline-grid; grid-auto-flow: column; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--surface); }
-.k-dash .seg button { background: none; border: 0; padding: 6px 14px; border-radius: 999px; color: var(--muted); font-size: 13px; }
+.k-dash .seg { display: inline-grid; grid-auto-flow: column; border: 1px solid var(--line); border-radius: 99px; padding: 3px; background: var(--surface); }
+.k-dash .seg button { background: none; border: 0; padding: 6px 14px; border-radius: 99px; color: var(--muted); font-size: 13px; }
 .k-dash .seg button[aria-pressed="true"] { background: var(--ink); color: var(--ink-fg); }
-.k-dash .card { background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 20px; display: grid; gap: 6px; align-content: start; }
+.k-dash .card { background: var(--card-bg); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: grid; gap: 6px; align-content: start; }
 .k-dash .card .label { font-size: 12px; color: var(--muted); }
 .k-dash .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.k-dash .stat .n { font-size: clamp(36px, 5vw, 48px); font-weight: 300; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.k-dash .stat .n { font-size: clamp(36px, 5vw, 48px); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.05em; }
 .k-dash .events { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 1fr); gap: 16px; overflow-x: auto; padding-bottom: 4px; }
 .k-dash .event .when { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-variant-numeric: tabular-nums; }
 .k-dash .event strong { font-weight: 500; font-size: 15px; }
@@ -23,7 +23,7 @@
 .k-dash .hoy { display: grid; gap: 12px; }
 .k-dash .hoy h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; }
 .k-dash .hoy-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; font-size: 14px; }
-.k-dash .hoy-item .num { font-variant-numeric: tabular-nums; font-size: 22px; font-weight: 300; min-width: 2ch; }
+.k-dash .hoy-item .num { font-variant-numeric: tabular-nums; font-size: 22px; font-weight: 700; min-width: 2ch; }
 .k-dash .hoy-item .go { background: none; border: 0; color: var(--fg); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--line); padding: 4px 0; }
 .k-dash .search { width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: 10px 0 12px; font-size: 15px; min-height: 44px; }
 .k-dash .search:focus { outline: none; border-bottom-color: var(--fg); }
@@ -32,7 +32,7 @@
 .k-dash .filters { display: flex; gap: 16px; flex-wrap: wrap; }
 .k-dash .filters button { background: none; border: 0; padding: 6px 0; color: var(--muted); font-size: 14px; border-bottom: 1px solid transparent; }
 .k-dash .filters button[aria-pressed="true"] { color: var(--fg); border-bottom-color: var(--fg); }
-.k-dash .btn { border-radius: 999px; padding: 9px 16px; font-size: 14px; font-weight: 500; border: 1px solid var(--line); background: var(--surface); }
+.k-dash .btn { border-radius: 99px; padding: 9px 16px; font-size: 14px; font-weight: 500; border: 1px solid var(--line); background: var(--surface); }
 .k-dash .btn.solid { background: var(--ink); color: var(--ink-fg); border-color: var(--ink); }
 .k-dash .btn:hover { opacity: 0.85; }
 .k-dash .list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
@@ -71,8 +71,8 @@
 .k-dash .igl-state.ok { color: var(--ok); }
 .k-dash .igl-state.bad { color: var(--danger); }
 .k-dash .scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.42); display: grid; place-items: center; padding: 16px; z-index: 10; }
-.k-dash .sheet { background: var(--surface); color: var(--fg); width: 100%; max-width: 620px; max-height: calc(100vh - 32px); overflow: auto; border: 1px solid var(--line); border-radius: 8px; padding: 28px; display: grid; gap: 18px; }
-.k-dash .sheet h2 { font-weight: 400; font-size: 24px; line-height: 1.2; letter-spacing: -0.01em; }
+.k-dash .sheet { background: var(--surface); color: var(--fg); width: 100%; max-width: 620px; max-height: calc(100vh - 32px); overflow: auto; border: 1px solid var(--line); border-radius: 16px; padding: 28px; display: grid; gap: 18px; }
+.k-dash .sheet h2 { font-weight: 400; font-size: 24px; line-height: 1.2; letter-spacing: -0.05em; }
 .k-dash .sheet .body { white-space: pre-line; }
 .k-dash .sheet .close { justify-self: end; }
 .k-dash .comments { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
@@ -95,7 +95,7 @@
 .k-dash .field .err { font-size: 13px; color: var(--danger); }
 .k-dash .field .err:empty { display: none; }
 .k-dash .chips { display: flex; gap: 8px; flex-wrap: wrap; }
-.k-dash .chip { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13px; color: var(--muted); }
+.k-dash .chip { background: none; border: 1px solid var(--line); border-radius: 99px; padding: 6px 12px; font-size: 13px; color: var(--muted); }
 .k-dash .chip[aria-pressed="true"] { background: var(--ink); color: var(--ink-fg); border-color: var(--ink); }
 .k-dash .modal-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 @media (max-width: 760px) {
@@ -127,4 +127,10 @@
   .k-dash .bar { gap: 10px; }
   .k-dash .filters { gap: 12px; }
   .k-dash .who { gap: 10px; flex-wrap: nowrap; }
+}
+
+/* Encabezado en móvil: el selector de roles, el nombre y Salir pasan a otra línea si no caben. */
+@media (max-width: 760px) {
+  .k-dash .top { flex-wrap: wrap; row-gap: 12px; }
+  .k-dash .who { flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
 }

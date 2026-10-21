@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { Disponibilidad, fechaISO, lunesDe, sumarDias } from '@/ui/Disponibilidad';
 import {
   getMiDisponibilidad,
@@ -29,7 +28,6 @@ export function AvailabilityPage() {
 
   const invalidar = () => qc.invalidateQueries({ queryKey: ['availability', 'me'] });
 
-  // Al tocar un servicio se actualiza en pantalla al instante y se revierte si el servidor falla.
   const servicio = useMutation({
     mutationFn: (v: { serviceId: string; estado: EstadoDisponibilidad | null }) =>
       fijarServicio(v.serviceId, v.estado),
@@ -82,11 +80,11 @@ export function AvailabilityPage() {
   const ocupado = dia.isPending || bloquear.isPending || desbloquear.isPending;
 
   return (
-    <AppLayout title="Disponibilidad" subtitle="Marca en qué servicios puedes servir">
+    <div className="k-page">
       {isError ? (
-        <p className="disp-error" role="alert">No pudimos cargar tu disponibilidad. Intenta de nuevo.</p>
+        <p className="k-error" role="alert">No pudimos cargar tu disponibilidad. Intenta de nuevo.</p>
       ) : isLoading || !data ? (
-        <p className="disp-muted">Cargando…</p>
+        <p className="k-muted">Cargando…</p>
       ) : (
         <Disponibilidad
           semana={semana}
@@ -101,6 +99,6 @@ export function AvailabilityPage() {
           onQuitarBloqueo={(id) => desbloquear.mutate(id)}
         />
       )}
-    </AppLayout>
+    </div>
   );
 }

@@ -1,10 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Banner } from "./Banner";
-import type { BannerTone } from "./Banner";
-import { Button } from "./Button";
-import { Field, PasswordField } from "./Field";
-import { Providers } from "./Providers";
+import "./LoginForm.css";
 
 export type Reason = "credenciales" | "bloqueada" | "red" | "sesion";
 
@@ -23,11 +19,11 @@ export interface LoginFormProps {
   onHelp?: () => void;
 }
 
-const mensajes: Record<Reason, { tone: BannerTone; text: string }> = {
-  credenciales: { tone: "bad", text: "El correo o la contraseña no coinciden. Revisa e intenta de nuevo." },
-  bloqueada: { tone: "warn", text: "Demasiados intentos fallidos. Intenta de nuevo en 15 minutos." },
-  red: { tone: "bad", text: "No pudimos conectar. Revisa tu conexión e intenta de nuevo." },
-  sesion: { tone: "info", text: "Tu sesión venció. Entra de nuevo para continuar." },
+const mensajes: Record<Reason, { tono: "bad" | "warn" | "info"; texto: string }> = {
+  credenciales: { tono: "bad", texto: "El correo o la contraseña no coinciden. Revisa e intenta de nuevo." },
+  bloqueada: { tono: "warn", texto: "Demasiados intentos fallidos. Intenta de nuevo en 15 minutos." },
+  red: { tono: "bad", texto: "No pudimos conectar. Revisa tu conexión e intenta de nuevo." },
+  sesion: { tono: "info", texto: "Tu sesión venció. Entra de nuevo para continuar." },
 };
 
 const linkBoton = { justifySelf: "start", background: "none", border: 0, padding: 0, cursor: "pointer", font: "inherit" } as const;
@@ -83,77 +79,79 @@ export function LoginForm({
         : null;
 
   return (
-    <div className="k-page k-page--compacta">
-      <header className="k-page__top">
-        <span className="k-mark">Gestión eclesial</span>
-        <span>Acceso seguro</span>
-      </header>
+    <div className="login-wrap">
+      <section className="login-card" aria-labelledby="titulo">
+        <div className="login-mark">Gestión eclesial</div>
+        <h1 id="titulo" className="login-title">Bienvenido <em>de nuevo</em>.</h1>
+        <p className="login-sub">Todo lo que sirves, en un solo lugar.</p>
 
-      <main className="k-page__main">
-        <section className="k-login-card" aria-labelledby="titulo">
-          <div className="k-heading">
-            <h1 id="titulo">Bienvenido de nuevo.</h1>
-            <p>Todo lo que sirves, en un solo lugar.</p>
-          </div>
+        {aviso && <p className="login-aviso" data-tono={aviso.tono} role="alert">{aviso.texto}</p>}
 
-          <form className="k-form" onSubmit={handleSubmit} noValidate>
-            {aviso && <Banner tone={aviso.tone}>{aviso.text}</Banner>}
+        {onProvider && (
+          <>
+            <button type="button" className="login-prov" onClick={() => onProvider("google")}>
+              Continuar con Google
+            </button>
+            <button type="button" className="login-prov" onClick={() => onProvider("microsoft")}>
+              Continuar con Microsoft
+            </button>
+          </>
+        )}
 
-            {onProvider && <Providers onSelect={onProvider} />}
+        {onProvider && <div className="login-or">o con correo</div>}
 
-            <Field
-              label="Correo"
+        <form onSubmit={handleSubmit} noValidate style={{ display: "grid", gap: 14 }}>
+          <label className="login-field">
+            Correo
+            <input
               type="email"
               autoComplete="username"
               placeholder="nombre@iglesia.org"
               value={correo}
               onChange={(e) => setCorreo(e.target.value)}
-              error={errores.correo}
+              aria-invalid={errores.correo ? true : undefined}
             />
+            <span className="login-error">{errores.correo}</span>
+          </label>
 
-            <PasswordField
-              label="Contraseña"
+          <label className="login-field">
+            Contraseña
+            <input
+              type="password"
               autoComplete="current-password"
               value={clave}
               onChange={(e) => setClave(e.target.value)}
-              error={errores.clave}
+              aria-invalid={errores.clave ? true : undefined}
             />
+            <span className="login-error">{errores.clave}</span>
+          </label>
 
-            <div className="k-row">
-              <label className="k-check">
-                <input type="checkbox" name="recordar" /> Mantener sesión
-              </label>
-              {onRecover ? (
-                <button type="button" className="k-link" onClick={onRecover} style={linkBoton}>
-                  ¿Olvidaste tu contraseña?
-                </button>
-              ) : (
-                <a className="k-link" href="#recuperar">¿Olvidaste tu contraseña?</a>
-              )}
-            </div>
+          <button type="submit" className="login-btn" disabled={cargando}>
+            {cargando ? "Verificando…" : "Entrar"}
+          </button>
+        </form>
 
-            <Button type="submit" loading={cargando} loadingText="Verificando…">
-              Entrar
-            </Button>
-
-            <div className="k-foot">
-              <span>¿Tu iglesia aún no tiene cuenta?</span>
-              {onRequestAccess ? (
-                <button type="button" className="k-link" onClick={onRequestAccess} style={linkBoton}>
-                  Solicitar acceso para mi iglesia
-                </button>
-              ) : (
-                <a className="k-link" href="#solicitar">Solicitar acceso para mi iglesia</a>
-              )}
-              {onHelp && (
-                <button type="button" className="k-link" onClick={onHelp} style={linkBoton}>
-                  ¿Necesitas ayuda?
-                </button>
-              )}
-            </div>
-          </form>
-        </section>
-      </main>
+        <div className="login-foot">
+          <span>¿Tu iglesia aún no tiene cuenta?</span>
+          {onRequestAccess ? (
+            <button type="button" className="login-link" onClick={onRequestAccess} style={linkBoton}>
+              Solicitar acceso
+            </button>
+          ) : (
+            <a className="login-link" href="#solicitar">Solicitar acceso</a>
+          )}
+          {onRecover && (
+            <button type="button" className="login-link" onClick={onRecover} style={linkBoton}>
+              ¿Olvidaste tu contraseña?
+            </button>
+          )}
+          {onHelp && (
+            <button type="button" className="login-link" onClick={onHelp} style={linkBoton}>
+              ¿Necesitas ayuda?
+            </button>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

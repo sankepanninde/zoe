@@ -2,7 +2,7 @@ interface ProvidersProps {
   onSelect: (provider: "google" | "microsoft") => void;
 }
 
-/** Botones de inicio con proveedor, con separador hacia el formulario de correo. */
+/** Botones de inicio con proveedores, con separador hacia el formulario de correo. */
 export function Providers({ onSelect }: ProvidersProps) {
   return (
     <>

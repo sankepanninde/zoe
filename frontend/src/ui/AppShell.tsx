@@ -1,35 +1,58 @@
 import { useState } from "react";
-import type { ReactNode } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AppNav, navPorRol } from "./AppNav";
+import { useAuth } from "@/stores/auth.store";
 import type { RolVista } from "./PanelRol";
 
-/* Pantalla principal: monta el menú del rol y muestra la sección activa.
-   Cada sección se pasa como elemento en `vistas`, así que esta pieza solo enruta;
-   no conoce los datos de cada pantalla. */
-
-export interface AppShellProps {
-  rol: RolVista;
-  /** Sección con la que abre. Si no pertenece al rol, abre en Inicio. */
-  inicial?: string;
-  /** Contenido de cada sección, por id del menú (inicio, disp, bandeja, …). */
-  vistas: Record<string, ReactNode>;
-  label?: string;
-}
-
-export function AppShell({ rol, inicial = "inicio", vistas, label = "Principal" }: AppShellProps) {
+export function AppShell() {
+  const { user } = useAuth();
+  // Determinar el rol del usuario
+  const rol: RolVista = user?.role === "ADMIN" ? "AD" : user?.role === "LEADER" ? "LE" : "TE";
+  
   const items = navPorRol(rol);
-  const ids = items.map((i) => i.id);
-  const [activo, setActivo] = useState(ids.includes(inicial) ? inicial : "inicio");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [fijo, setFijo] = useState(false);
 
-  const contenido = vistas[activo] ?? (
-    <p className="k-muted">Esta sección todavía no está lista.</p>
-  );
+  // Mapeo de los IDs del menú nuevo a las rutas reales
+  const pathToId: Record<string, string> = {
+    "/": "inicio",
+    "/availability": "disp",
+    "/calendar": "cronograma",
+    "/my-schedule": "turnos",
+    "/team": "personas",
+    "/settings": "iglesia",
+  };
+  
+  const idToPath: Record<string, string> = {
+    inicio: "/",
+    disp: "/availability",
+    cronograma: "/calendar",
+    turnos: "/my-schedule",
+    personas: "/team",
+    iglesia: "/settings",
+    bandeja: "/team",
+    anuncios: "/",
+    ministerio: "/team",
+  };
+
+  const activo = pathToId[location.pathname] || "inicio";
+
+  const handleNavegar = (id: string) => {
+    const path = idToPath[id];
+    if (path) navigate(path);
+  };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr)", minHeight: "100vh" }}>
-      <AppNav items={items} activo={activo} onNavegar={setActivo} label={label} />
-      <main style={{ minWidth: 0, padding: "28px clamp(16px, 4vw, 40px)", display: "block" }}>
-        {contenido}
+    <div className="fey-shell" style={{ paddingLeft: fijo ? 280 : 0 }}>
+      <AppNav 
+        items={items} 
+        activo={activo} 
+        onNavegar={handleNavegar} 
+        onFijadoChange={setFijo} 
+      />
+      <main style={{ minWidth: 0, padding: "40px clamp(16px, 4vw, 48px)" }}>
+        <Outlet /> {/* Aquí se renderizan las páginas */}
       </main>
     </div>
   );

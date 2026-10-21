@@ -198,7 +198,7 @@ export function DetalleAnuncio({
 }: {
   a: Announcement;
   onCerrar: () => void;
-  onComentar: (texto: string) => void;
+  onComentar: (texto: string) => void | Promise<void>;
 }) {
   const [texto, setTexto] = useState("");
   const [invalido, setInvalido] = useState(false);
@@ -225,8 +225,8 @@ export function DetalleAnuncio({
       return;
     }
     setInvalido(false);
-    onComentar(texto.trim());
-    setTexto("");
+    // El texto solo se borra si el comentario se guardó; si falla, se conserva para reintentar.
+    Promise.resolve(onComentar(texto.trim())).then(() => setTexto(""), () => {});
   }
 
   return (

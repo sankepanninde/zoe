@@ -3,7 +3,7 @@ import { useId } from "react";
 export interface TabOption<T extends string> {
   value: T;
   label: string;
-  description: string;
+  description?: string;
   disabled?: boolean;
 }
 
@@ -47,7 +47,7 @@ export function Tabs<T extends string>({ label, options, value, onChange }: Tabs
             }}
           >
             {opt.label}
-            <small>{opt.description}</small>
+            {opt.description && <small>{opt.description}</small>}
           </button>
         );
       })}

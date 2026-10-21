@@ -6,7 +6,7 @@ import { useAuth } from '@/stores/auth.store';
 import { Login } from '@/pages/Login';
 import { Register } from '@/pages/Register';
 import { Dashboard } from '@/pages/Dashboard';
-import { SoundSchedule } from '@/pages/SoundSchedule';
+import { Calendar } from '@/pages/Calendar';
 import { SundaysAdmin } from '@/pages/SundaysAdmin';
 import { MySchedule } from '@/pages/MySchedule';
 import { Team } from '@/pages/Team';
@@ -139,7 +139,7 @@ function AppRoutes() {
           path="/calendar"
           element={
             <ProtectedRoute>
-              <SoundSchedule />
+              <Calendar />
             </ProtectedRoute>
           }
         />

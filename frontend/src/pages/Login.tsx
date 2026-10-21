@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LoginForm } from '@/ui';
@@ -8,21 +7,8 @@ export function Login() {
   const navigate = useNavigate();
   const { loginWithResult } = useAuth();
 
-  useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtml = html.style.overflow;
-    const prevBody = body.style.overflow;
-    html.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
-    return () => {
-      html.style.overflow = prevHtml;
-      body.style.overflow = prevBody;
-    };
-  }, []);
-
-  const handleSubmit = async (data: { correo: string; clave: string }) => {
-    const result = await loginWithResult({ ...data, cuenta: 'plataforma' });
+  const handleSubmit = async (data: any) => {
+    const result = await loginWithResult(data);
     if (result.ok) {
       toast.success('Bienvenido a Zoe');
       navigate('/');
@@ -31,22 +17,12 @@ export function Login() {
   };
 
   return (
-    <div
-      className="k-app"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        overflowY: 'auto',
-        background: '#0C0E0D',
-        color: '#ECEDEA',
-      }}
-    >
-      <LoginForm
-        onSubmit={handleSubmit}
-        onProvider={() => toast.info('Inicio con Google próximamente')}
-        onRecover={() => navigate('/recuperar')}
-        onRequestAccess={() => navigate('/register')}
-      />
-    </div>
+    <LoginForm
+      variant="general"
+      onSubmit={handleSubmit}
+      onProvider={() => toast.info('Login con proveedor próximamente')}
+      onRequestAccess={() => navigate('/register')}
+      onRecover={() => navigate('/forgot-password')}
+    />
   );
 }

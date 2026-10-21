@@ -21,7 +21,6 @@ export const lunesDe = (d: Date) =>
 
 const corto = (d: Date) => d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
 
-// Ciclo al tocar un servicio: sin responder → puedo → no puedo → sin responder
 const siguiente = (e: EstadoDisponibilidad): EstadoDisponibilidad | null =>
   e === 'PENDIENTE' ? 'DISPONIBLE' : e === 'DISPONIBLE' ? 'NO_DISPONIBLE' : null;
 

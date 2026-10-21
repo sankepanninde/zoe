@@ -1,88 +1,186 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import type { RolVista } from "./PanelRol";
+import "./AppNav.css";
 
-/* Navegación principal: barra lateral de iconos en escritorio y barra inferior en celular.
-   Las secciones dependen del rol; la app decide cuál es la activa. */
+/* Navegación Fey.
+   Escritorio: panel flotante que aparece al pasar el mouse por el borde izquierdo
+   (lengüeta) y se oculta al salir. Clic en la lengüeta lo fija y empuja el contenido.
+   Celular: barra inferior con cuatro secciones y "Más" para el resto. */
 
 export interface NavItem {
   id: string;
   label: string;
-  icon: ReactNode;
+  grupo: "Mi espacio" | "Equipo" | "Comunicación";
 }
-
-const svg = (d: ReactNode) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
-);
-
-const iconos = {
-  inicio: svg(<><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></>),
-  turnos: svg(<><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /></>),
-  anuncios: svg(<><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" /><path d="M13.7 20a2 2 0 0 1-3.4 0" /></>),
-  ministerio: svg(<><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6" /></>),
-  cronograma: svg(<><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4M8 14h2M14 14h2M8 18h2" /></>),
-  iglesia: svg(<><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" /></>),
-  personas: svg(<><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>),
-  plataforma: svg(<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></>),
-  bandeja: svg(<><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z" /></>),
-  disp: svg(<><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4M9 15l2 2 4-4" /></>),
-};
 
 /** Secciones de cada rol. Siervo: sus turnos. Líder: su ministerio. Pastor: toda la iglesia. */
 export function navPorRol(rol: RolVista): NavItem[] {
-  const inicio = { id: "inicio", label: "Inicio", icon: iconos.inicio };
-  const disp = { id: "disp", label: "Disponibilidad", icon: iconos.disp };
-  const bandeja = { id: "bandeja", label: "Bandeja", icon: iconos.bandeja };
-  const anuncios = { id: "anuncios", label: "Anuncios", icon: iconos.anuncios };
+  const inicio: NavItem = { id: "inicio", label: "Inicio", grupo: "Mi espacio" };
+  const disp: NavItem = { id: "disp", label: "Disponibilidad", grupo: "Mi espacio" };
+  const bandeja: NavItem = { id: "bandeja", label: "Bandeja", grupo: "Comunicación" };
+  const anuncios: NavItem = { id: "anuncios", label: "Anuncios", grupo: "Comunicación" };
   if (rol === "TE") {
-    return [inicio, disp, { id: "turnos", label: "Mis turnos", icon: iconos.turnos }, bandeja, anuncios];
+    return [inicio, disp, { id: "turnos", label: "Mis turnos", grupo: "Equipo" }, bandeja, anuncios];
   }
   if (rol === "LE") {
     return [
       inicio,
-      { id: "ministerio", label: "Mi ministerio", icon: iconos.ministerio },
-      { id: "cronograma", label: "Cronograma", icon: iconos.cronograma },
       disp,
+      { id: "ministerio", label: "Mi ministerio", grupo: "Equipo" },
+      { id: "cronograma", label: "Cronograma", grupo: "Equipo" },
       bandeja,
       anuncios,
     ];
   }
   return [
     inicio,
-    { id: "cronograma", label: "Cronograma", icon: iconos.cronograma },
     disp,
-    { id: "iglesia", label: "Iglesia", icon: iconos.iglesia },
-    { id: "personas", label: "Personas", icon: iconos.personas },
+    { id: "cronograma", label: "Cronograma", grupo: "Equipo" },
+    { id: "iglesia", label: "Iglesia", grupo: "Equipo" },
+    { id: "personas", label: "Personas", grupo: "Equipo" },
     bandeja,
     anuncios,
   ];
 }
 
+const ANCHO_ESCRITORIO = 900;
+const MOVIL_PRIMARIOS = 4;
+
 export interface AppNavProps {
   items: NavItem[];
   activo: string;
   onNavegar: (id: string) => void;
-  /** Nombre accesible del menú. */
+  /** Avisa al contenedor cuando el menú está fijo en escritorio (para correr el contenido). */
+  onFijadoChange?: (fijo: boolean) => void;
   label?: string;
 }
 
-export function AppNav({ items, activo, onNavegar, label = "Principal" }: AppNavProps) {
-  return (
-    <nav className="k-nav" aria-label={label}>
-      <ul>
-        {items.map((it) => (
-          <li key={it.id}>
+export function AppNav({ items, activo, onNavegar, onFijadoChange, label = "Principal" }: AppNavProps) {
+  const [abierto, setAbierto] = useState(false);
+  const [fijado, setFijado] = useState(false);
+  const [hojaAbierta, setHojaAbierta] = useState(false);
+  const [movil, setMovil] = useState(() => window.innerWidth < ANCHO_ESCRITORIO);
+  const cierre = useRef<number | null>(null);
+
+  useEffect(() => {
+    const ajustar = () => setMovil(window.innerWidth < ANCHO_ESCRITORIO);
+    window.addEventListener("resize", ajustar);
+    return () => window.removeEventListener("resize", ajustar);
+  }, []);
+
+  useEffect(() => {
+    onFijadoChange?.(fijado && !movil);
+  }, [fijado, movil, onFijadoChange]);
+
+  useEffect(() => () => { if (cierre.current) window.clearTimeout(cierre.current); }, []);
+
+  const abrir = () => {
+    if (cierre.current) window.clearTimeout(cierre.current);
+    setAbierto(true);
+  };
+  const cerrar = () => {
+    if (fijado) return;
+    cierre.current = window.setTimeout(() => setAbierto(false), 300);
+  };
+  const fijar = () => { setFijado(true); setAbierto(true); };
+  const soltar = () => { setFijado(false); setAbierto(false); };
+  const teclaFijar = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fijar(); }
+  };
+
+  if (movil) {
+    const primarios = items.slice(0, MOVIL_PRIMARIOS);
+    const resto = items.slice(MOVIL_PRIMARIOS);
+    return (
+      <>
+        <nav className="fey-tabs" aria-label={label}>
+          {primarios.map((it) => (
             <button
+              key={it.id}
               type="button"
-              aria-label={it.label}
+              className="fey-tab"
               aria-current={activo === it.id ? "page" : undefined}
               onClick={() => onNavegar(it.id)}
             >
-              {it.icon}
-              <span className="k-nav__tip">{it.label}</span>
+              {it.label}
             </button>
-          </li>
+          ))}
+          {resto.length > 0 && (
+            <button type="button" className="fey-tab" aria-expanded={hojaAbierta} onClick={() => setHojaAbierta((v) => !v)}>
+              Más
+            </button>
+          )}
+        </nav>
+        {hojaAbierta && (
+          <div className="fey-hoja" role="dialog" aria-label="Más secciones">
+            {items.map((it) => (
+              <button
+                key={it.id}
+                type="button"
+                className="fey-item"
+                aria-current={activo === it.id ? "page" : undefined}
+                onClick={() => { onNavegar(it.id); setHojaAbierta(false); }}
+              >
+                {it.label}
+              </button>
+            ))}
+            <button type="button" className="fey-cerrar" onClick={() => setHojaAbierta(false)}>Cerrar</button>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  const grupos = (["Mi espacio", "Equipo", "Comunicación"] as const)
+    .map((g) => ({ nombre: g, items: items.filter((i) => i.grupo === g) }))
+    .filter((g) => g.items.length > 0);
+  const visible = abierto || fijado;
+
+  return (
+    <>
+      <div className="fey-borde" aria-hidden="true" onMouseEnter={abrir} />
+      {!fijado && (
+        <div
+          className="fey-lengueta"
+          role="button"
+          tabIndex={0}
+          aria-label="Mostrar menú"
+          onMouseEnter={abrir}
+          onClick={fijar}
+          onKeyDown={teclaFijar}
+        />
+      )}
+      <nav
+        className={`fey-panel${visible ? " is-abierto" : ""}`}
+        aria-label={label}
+        onMouseEnter={abrir}
+        onMouseLeave={cerrar}
+      >
+        <div className="fey-marca">
+          <span className="fey-punto" aria-hidden="true" />
+          Gestión eclesial
+          {fijado && (
+            <button type="button" className="fey-colapsar" aria-label="Ocultar menú" onClick={soltar}>‹</button>
+          )}
+        </div>
+        {grupos.map((g) => (
+          <div key={g.nombre}>
+            <span className="fey-grp">{g.nombre}</span>
+            {g.items.map((it) => (
+              <button
+                key={it.id}
+                type="button"
+                className="fey-item"
+                aria-current={activo === it.id ? "page" : undefined}
+                onClick={() => onNavegar(it.id)}
+              >
+                {it.label}
+              </button>
+            ))}
+          </div>
         ))}
-      </ul>
-    </nav>
+      </nav>
+    </>
   );
 }
