@@ -1,4 +1,5 @@
 import { useMemo, useState, type CSSProperties } from "react";
+import "./kit.css";
 import "./Cronograma.css";
 
 /* Cronograma Fey: vista de año y de semana, por rol (Líder o Siervo).
@@ -117,13 +118,12 @@ const PREF = "cronograma.vista";
 const leerPref = (): string | null => { try { return localStorage.getItem(PREF); } catch { return null; } };
 const guardarPref = (v: string | null) => { try { if (v) localStorage.setItem(PREF, v); else localStorage.removeItem(PREF); } catch { /* sin almacenamiento */ } };
 
-export function Cronograma() {
-  const [rol, setRol] = useState<"lider" | "siervo">("lider");
+export function Cronograma({ rol = "lider" }: { rol?: "lider" | "siervo" }) {
   const [vista, setVista] = useState<"anio" | "semana">(leerPref() === "semana" ? "semana" : "anio");
   const [recordar, setRecordar] = useState(!!leerPref());
   const [minSel, setMinSel] = useState<Ministerio | "todos">("aseo");
   const [quien, setQuien] = useState("ana");
-  const [anio, setAnio] = useState(2026);
+  const [anio, setAnio] = useState(() => new Date().getFullYear());
   const [semana, setSemana] = useState(() => lunesDe("2026-10-12"));
   const [selFecha, setSelFecha] = useState<string | null>("2026-10-18");
   const [selKey, setSelKey] = useState<string | null>(null);
@@ -173,10 +173,6 @@ export function Cronograma() {
       </header>
 
       <div className="cro-controles">
-        <div className="k-seg" role="group" aria-label="Rol">
-          <button type="button" aria-pressed={rol === "lider"} onClick={() => { setRol("lider"); setSelKey(null); }}>Líder</button>
-          <button type="button" aria-pressed={rol === "siervo"} onClick={() => { setRol("siervo"); setSelKey(null); }}>Siervo</button>
-        </div>
         <div className="k-seg" role="group" aria-label="Vista">
           <button type="button" aria-pressed={vista === "anio"} onClick={() => cambiarVista("anio")}>Año</button>
           <button type="button" aria-pressed={vista === "semana"} onClick={() => cambiarVista("semana")}>Semana</button>
@@ -267,7 +263,9 @@ function VistaAnio(props: {
   rol: "lider" | "siervo"; quien: string; asig: Record<string, string[]>;
   onDia: (f: string) => void; onVerSemana: (f: string) => void;
 }) {
-  const { anio, selFecha, visible, colorDe, rol, quien, asig, onDia, onVerSemana } = props;
+  const { anio, selFecha, visible, rol, quien, asig, onDia, onVerSemana } = props;
+  const hoy = new Date();
+  const inicioMes = anio === hoy.getFullYear() ? hoy.getMonth() : 0;
   const todos = useMemo(() => eventosEn(new Date(anio, 0, 1), new Date(anio, 11, 31)), [anio]);
   const porFecha = useMemo(() => {
     const m: Record<string, Evento[]> = {};
@@ -279,7 +277,8 @@ function VistaAnio(props: {
   return (
     <>
       <div className="anio">
-        {Array.from({ length: 12 }, (_, m) => {
+        {Array.from({ length: 12 - inicioMes }, (_, k) => {
+          const m = inicioMes + k;
           const primero = new Date(anio, m, 1);
           const offset = diaSemana(primero);
           const dias = new Date(anio, m + 1, 0).getDate();

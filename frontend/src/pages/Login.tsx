@@ -18,7 +18,6 @@ export function Login() {
 
   return (
     <LoginForm
-      variant="general"
       onSubmit={handleSubmit}
       onProvider={() => toast.info('Login con proveedor próximamente')}
       onRequestAccess={() => navigate('/register')}

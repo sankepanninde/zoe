@@ -7,7 +7,6 @@ import { Login } from '@/pages/Login';
 import { Register } from '@/pages/Register';
 import { Dashboard } from '@/pages/Dashboard';
 import { Calendar } from '@/pages/Calendar';
-import { SundaysAdmin } from '@/pages/SundaysAdmin';
 import { MySchedule } from '@/pages/MySchedule';
 import { Team } from '@/pages/Team';
 import { AvailabilityPage } from '@/pages/Availability';
@@ -57,26 +56,6 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (user) return <Navigate to="/" replace />;
-  return <>{children}</>;
-}
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!user) return <Navigate to="/login" replace />;
-
-  // Si es técnico, redirigir a su vista personal
-  if (user.role === 'TECHNICIAN') {
-    return <Navigate to="/my-schedule" replace />;
-  }
-
   return <>{children}</>;
 }
 
@@ -141,14 +120,6 @@ function AppRoutes() {
             <ProtectedRoute>
               <Calendar />
             </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/calendar/sundays"
-          element={
-            <AdminRoute>
-              <SundaysAdmin />
-            </AdminRoute>
           }
         />
         <Route
