@@ -25,17 +25,17 @@ import { Avatar } from '@/components/ui/Avatar';
 // ===========================================
 
 const roleLabels: Record<UserRole, string> = {
-  SUPER_ADMIN: 'Super Admin',
+    DEV: 'Desarrollador',
   ADMIN: 'Administrador',
   LEADER: 'Líder',
-  TECHNICIAN: 'Técnico',
+  SIERVO: 'Siervo',
 };
 
 const roleColors: Record<UserRole, string> = {
-  SUPER_ADMIN: 'bg-purple-100 text-purple-700',
+    DEV: 'bg-purple-100 text-purple-700',
   ADMIN: 'bg-primary-100 text-primary-700',
   LEADER: 'bg-warning-light text-warning-dark',
-  TECHNICIAN: 'bg-success-light text-success-dark',
+  SIERVO: 'bg-success-light text-success-dark',
 };
 
 // ===========================================
@@ -163,7 +163,7 @@ export function Team() {
               <option value="">Todos los roles</option>
               <option value="ADMIN">Administradores</option>
               <option value="LEADER">Líderes</option>
-              <option value="TECHNICIAN">Técnicos</option>
+              <option value="SIERVO">Siervos</option>
             </select>
 
             <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-foreground-muted">

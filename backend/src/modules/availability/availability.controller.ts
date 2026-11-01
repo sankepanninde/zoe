@@ -1,211 +1,104 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import * as service from './availability.service.js';
 import {
-  toggleDaySchema,
-  bulkToggleSchema,
-  listServicesQuerySchema,
-  setServiceStateSchema,
-  setDayStateSchema,
+  getAvailabilityQuerySchema,
+  putDayStateSchema,
+  putServiceStateSchema,
   createBlockSchema,
+  updateBlockSchema,
 } from './availability.schemas.js';
 
 function requireUser(request: FastifyRequest, reply: FastifyReply) {
   if (!request.user) {
-    reply.status(401).send({
-      statusCode: 401,
-      error: 'Unauthorized',
-      message: 'No autenticado',
-    });
+    reply.status(401).send({ code: 'UNAUTHORIZED', message: 'No autenticado' });
     return null;
   }
   return request.user;
 }
 
 // ===========================================
-// MI DISPONIBILIDAD
+// GET /availability/me/services
 // ===========================================
-
-export async function listMineHandler(
-  request: FastifyRequest<{ Querystring: { year?: string; month?: string } }>,
-  reply: FastifyReply
-) {
+// GET /availability/me/services
+export async function listMineHandler(request: FastifyRequest, reply: FastifyReply) {
   const user = requireUser(request, reply);
   if (!user) return;
 
-  const now = new Date();
-  const year = request.query.year
-    ? parseInt(request.query.year, 10)
-    : now.getUTCFullYear();
-  const month = request.query.month
-    ? parseInt(request.query.month, 10)
-    : now.getUTCMonth();
-
-  const availability = await service.listMyAvailability(user.id, year, month);
-  return reply.send({ availability });
+  const query = getAvailabilityQuerySchema.parse(request.query);
+  const data = await service.getMyAvailability(user.id, query);
+  return reply.send(data); // Ahora data = { dias, bloqueos }
 }
 
-export async function toggleDayHandler(
-  request: FastifyRequest,
-  reply: FastifyReply
-) {
+// GET /availability/me/blocks
+export async function listBlocksHandler(request: FastifyRequest, reply: FastifyReply) {
   const user = requireUser(request, reply);
   if (!user) return;
 
-  const input = toggleDaySchema.parse(request.body);
-  const result = await service.toggleDay(
-    user.id,
-    input.date,
-    input.available,
-    input.reason
-  );
-  return reply.send({ availability: result });
+  const query = getAvailabilityQuerySchema.parse(request.query);
+  const data = await service.listBlocks(user.id, query);
+  return reply.send(data);
 }
 
-export async function bulkToggleHandler(
-  request: FastifyRequest,
+// ===========================================
+// PUT /availability/me/days/:fecha
+// ===========================================
+export async function putDayHandler(
+  request: FastifyRequest<{ Params: { fecha: string } }>,
   reply: FastifyReply
 ) {
   const user = requireUser(request, reply);
   if (!user) return;
 
-  const input = bulkToggleSchema.parse(request.body);
-  const results = await service.bulkToggle(
-    user.id,
-    input.dates,
-    input.available,
-    input.reason
-  );
-  return reply.send({ availability: results });
-}
-
-export async function clearMonthHandler(
-  request: FastifyRequest<{ Querystring: { year: string; month: string } }>,
-  reply: FastifyReply
-) {
-  const user = requireUser(request, reply);
-  if (!user) return;
-
-  const year = parseInt(request.query.year, 10);
-  const month = parseInt(request.query.month, 10);
-
-  await service.clearMonth(user.id, year, month);
+  const input = putDayStateSchema.parse(request.body);
+  await service.setDayState(user.id, request.params.fecha, input.estado);
   return reply.status(204).send();
 }
 
 // ===========================================
-// VER DISPONIBILIDAD DE OTRO USUARIO (líder)
+// PUT /availability/me/services/:serviceId
 // ===========================================
-
-export async function listUserHandler(
-  request: FastifyRequest<{
-    Params: { userId: string };
-    Querystring: { year?: string; month?: string };
-  }>,
+export async function putServiceHandler(
+  request: FastifyRequest<{ Params: { serviceId: string } }>,
   reply: FastifyReply
 ) {
   const user = requireUser(request, reply);
   if (!user) return;
 
-  // Solo ADMIN/LEADER pueden ver disponibilidad de otros
-  if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN' && user.role !== 'LEADER') {
-    return reply.status(403).send({
-      statusCode: 403,
-      error: 'Forbidden',
-      message: 'No tienes permiso',
-    });
-  }
-
-  const now = new Date();
-  const year = request.query.year
-    ? parseInt(request.query.year, 10)
-    : now.getUTCFullYear();
-  const month = request.query.month
-    ? parseInt(request.query.month, 10)
-    : now.getUTCMonth();
-
-  const availability = await service.listUserAvailability(
-    request.params.userId,
-    year,
-    month
-  );
-  return reply.send({ availability });
+  const input = putServiceStateSchema.parse(request.body);
+  await service.setServiceState(user.id, request.params.serviceId, input.estado);
+  return reply.status(204).send();
 }
 
 // ===========================================
-// NUEVOS ENDPOINTS
+// POST /availability/me/blocks
 // ===========================================
-
-export async function listServicesHandler(
-  request: FastifyRequest<{ Querystring: { desde: string; hasta: string } }>,
-  reply: FastifyReply
-) {
-  const user = requireUser(request, reply);
-  if (!user) return;
-
-  const input = listServicesQuerySchema.parse(request.query);
-  const result = await service.listServicesWithAvailability(
-    user.id,
-    input.desde,
-    input.hasta
-  );
-  return reply.send(result);
-}
-
-export async function setServiceStateHandler(
-  request: FastifyRequest<{
-    Params: { serviceId: string };
-    Body: { estado: 'DISPONIBLE' | 'NO_DISPONIBLE' | null };
-  }>,
-  reply: FastifyReply
-) {
-  const user = requireUser(request, reply);
-  if (!user) return;
-
-  const input = setServiceStateSchema.parse(request.body);
-  const result = await service.setServiceState(
-    user.id,
-    request.params.serviceId,
-    input.estado
-  );
-  return reply.send(result);
-}
-
-export async function setDayStateHandler(
-  request: FastifyRequest<{
-    Params: { fecha: string };
-    Body: { estado: 'DISPONIBLE' | 'NO_DISPONIBLE' };
-  }>,
-  reply: FastifyReply
-) {
-  const user = requireUser(request, reply);
-  if (!user) return;
-
-  const input = setDayStateSchema.parse(request.body);
-  const result = await service.setDayState(
-    user.id,
-    request.params.fecha,
-    input.estado
-  );
-  return reply.send(result);
-}
-
-export async function createBlockHandler(
-  request: FastifyRequest,
-  reply: FastifyReply
-) {
+export async function createBlockHandler(request: FastifyRequest, reply: FastifyReply) {
   const user = requireUser(request, reply);
   if (!user) return;
 
   const input = createBlockSchema.parse(request.body);
-  const block = await service.createBlock(
-    user.id,
-    input.desde,
-    input.hasta,
-    input.motivo
-  );
-  return reply.status(201).send({ block });
+  const block = await service.createBlock(user.id, input);
+  return reply.status(201).send(block);
 }
 
+// ===========================================
+// PATCH /availability/me/blocks/:id
+// ===========================================
+export async function updateBlockHandler(
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) {
+  const user = requireUser(request, reply);
+  if (!user) return;
+
+  const input = updateBlockSchema.parse(request.body);
+  const block = await service.updateBlock(user.id, request.params.id, input);
+  return reply.send(block);
+}
+
+// ===========================================
+// DELETE /availability/me/blocks/:id
+// ===========================================
 export async function deleteBlockHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply

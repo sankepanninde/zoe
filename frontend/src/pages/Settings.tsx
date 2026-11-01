@@ -68,7 +68,7 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 export function Settings() {
   const { user, updateChurch, updateUser } = useAuth();
   const church = user?.church;
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'DEV';
   const userMinistries = user?.ministries ?? [];
 
   // ============ AVATAR ============
@@ -211,8 +211,7 @@ export function Settings() {
       toast.success('Contraseña actualizada. Vuelve a iniciar sesión.');
       resetPasswordForm();
       setTimeout(() => {
-        localStorage.removeItem('zoe_access_token');
-        window.location.href = '/login';
+        void useAuth.getState().logout();
       }, 2000);
     },
     onError: (err) => toast.error(getApiError(err)),

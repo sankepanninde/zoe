@@ -25,7 +25,7 @@ const userFormSchema = z.object({
     .optional()
     .or(z.literal('')),
   phone: z.string().max(20).optional().or(z.literal('')),
-  role: z.enum(['ADMIN', 'LEADER', 'TECHNICIAN']),
+  role: z.enum(['ADMIN', 'LEADER', 'SIERVO']),
 });
 
 type UserFormData = z.infer<typeof userFormSchema>;
@@ -72,7 +72,7 @@ export function UserModal({ open, user, onClose, onSuccess }: UserModalProps) {
       email: '',
       password: '',
       phone: '',
-      role: 'TECHNICIAN',
+      role: 'SIERVO',
     },
   });
 
@@ -85,7 +85,7 @@ export function UserModal({ open, user, onClose, onSuccess }: UserModalProps) {
           email: user.email,
           password: '',
           phone: user.phone ?? '',
-          role: user.role as 'ADMIN' | 'LEADER' | 'TECHNICIAN',
+          role: user.role as 'ADMIN' | 'LEADER' | 'SIERVO',
         });
         const map: Record<string, { isLeader: boolean; position: string }> = {};
         (user.ministries ?? []).forEach((um) => {
@@ -101,7 +101,7 @@ export function UserModal({ open, user, onClose, onSuccess }: UserModalProps) {
           email: '',
           password: '',
           phone: '',
-          role: 'TECHNICIAN',
+          role: 'SIERVO',
         });
         setSelectedMinistries({});
       }
@@ -327,7 +327,7 @@ export function UserModal({ open, user, onClose, onSuccess }: UserModalProps) {
             <div>
               <label className="zoe-label">Rol</label>
               <select {...register('role')} className="zoe-input">
-                <option value="TECHNICIAN">Técnico</option>
+                <option value="SIERVO">Siervo</option>
                 <option value="LEADER">Líder</option>
                 <option value="ADMIN">Administrador</option>
               </select>

@@ -3,17 +3,20 @@ import { hashPassword, verifyPassword } from '../../lib/password.js';
 import {
   signAccessToken,
   signRefreshToken,
+  verifyRefreshToken,
   hashToken,
   parseDuration,
 } from '../../lib/jwt.js';
 import { env } from '../../lib/env.js';
 import type { RegisterInput, LoginInput } from './auth.schemas.js';
 import crypto from 'node:crypto';
+import { Role } from '@prisma/client'; // Importamos el enum de Prisma
 
 export class AuthError extends Error {
   constructor(
     message: string,
-    public statusCode: number = 400
+    public statusCode: number = 400,
+    public code: string = 'AUTH_ERROR'
   ) {
     super(message);
     this.name = 'AuthError';
@@ -30,6 +33,9 @@ interface SessionContext {
   ipAddress?: string;
 }
 
+// ===========================================
+// REGISTRO
+// ===========================================
 export async function registerChurchAndAdmin(
   input: RegisterInput,
   ctx: SessionContext = {}
@@ -38,32 +44,29 @@ export async function registerChurchAndAdmin(
     id: string;
     email: string;
     name: string;
-    role: string;
+    role: Role;
     churchId: string;
     mustChangePassword: boolean;
   };
   tokens: AuthTokens;
 }> {
-  // Verificar que el email no exista ya
   const existingUser = await prisma.user.findFirst({
     where: { email: input.email },
   });
   if (existingUser) {
-    throw new AuthError('Ya existe un usuario con ese email', 409);
+    throw new AuthError('Ya existe un usuario con ese email', 409, 'CONFLICT');
   }
 
-  // Verificar que el slug no exista
   const existingChurch = await prisma.church.findUnique({
     where: { slug: input.churchSlug },
   });
   if (existingChurch) {
-    throw new AuthError('Ya existe una iglesia con ese slug', 409);
+    throw new AuthError('Ya existe una iglesia con ese slug', 409, 'CONFLICT');
   }
 
   const passwordHash = await hashPassword(input.password);
 
-  // Crear church + user en una transacción
-    const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const church = await tx.church.create({
       data: {
         name: input.churchName,
@@ -86,34 +89,28 @@ export async function registerChurchAndAdmin(
     return { church, user };
   });
 
-    // ===========================================
-  // AUTO-SEED: Ministerios por defecto
-  // ===========================================
+  // AUTO-SEEDS
   try {
-    const { seedDefaultMinistries } = await import(
-      '../ministries/ministries.service.js'
-    );
+    const { seedDefaultMinistries } = await import('../ministries/ministries.service.js');
     await seedDefaultMinistries(result.church.id);
   } catch (err) {
     console.error('[auth] Error al crear ministerios:', err);
   }
 
-  // ===========================================
-  // AUTO-SEED: Generar domingos del año actual
-  // ===========================================
   try {
     const { seedYearSundays } = await import('../services/services.service.js');
     await seedYearSundays(result.church.id, new Date().getFullYear());
   } catch (err) {
-    // No fallar el registro si el seed falla
     console.error('[auth] Error al generar domingos:', err);
   }
 
+  // Creamos una nueva familia de tokens
+  const familyId = crypto.randomUUID();
+
   const tokens = await createSession(
     result.user.id,
-    result.church.id,
     result.user.role,
-    result.user.email,
+    familyId,
     ctx
   );
 
@@ -124,12 +121,15 @@ export async function registerChurchAndAdmin(
       name: result.user.name,
       role: result.user.role,
       churchId: result.church.id,
-      mustChangePassword: false,  // admin recién registrado no necesita cambiarla
+      mustChangePassword: false,
     },
     tokens,
   };
 }
 
+// ===========================================
+// LOGIN
+// ===========================================
 export async function login(
   input: LoginInput,
   ctx: SessionContext = {}
@@ -138,7 +138,7 @@ export async function login(
     id: string;
     email: string;
     name: string;
-    role: string;
+    role: Role;
     churchId: string;
     mustChangePassword: boolean;
   };
@@ -149,12 +149,13 @@ export async function login(
   });
 
   if (!user || !user.active) {
-    throw new AuthError('Credenciales inválidas', 401);
+    // Mensaje genérico para no revelar si el correo existe
+    throw new AuthError('Credenciales inválidas', 401, 'UNAUTHORIZED');
   }
 
   const valid = await verifyPassword(user.passwordHash, input.password);
   if (!valid) {
-    throw new AuthError('Credenciales inválidas', 401);
+    throw new AuthError('Credenciales inválidas', 401, 'UNAUTHORIZED');
   }
 
   await prisma.user.update({
@@ -162,7 +163,9 @@ export async function login(
     data: { lastLoginAt: new Date() },
   });
 
-  const tokens = await createSession(user.id, user.churchId, user.role, user.email, ctx);
+  // Creamos una nueva familia de tokens
+  const familyId = crypto.randomUUID();
+  const tokens = await createSession(user.id, user.role, familyId, ctx);
 
   return {
     user: {
@@ -171,57 +174,60 @@ export async function login(
       name: user.name,
       role: user.role,
       churchId: user.churchId,
-      mustChangePassword: user.mustChangePassword,  // ← NUEVO
+      mustChangePassword: user.mustChangePassword,
     },
     tokens,
   };
 }
 
+// ===========================================
+// CREAR SESIÓN (Interno)
+// ===========================================
 async function createSession(
   userId: string,
-  churchId: string,
-  role: string,
-  email: string,
+  role: Role,
+  familyId: string,
   ctx: SessionContext
 ): Promise<AuthTokens> {
+  // Access token: solo sub y role (sin email)
   const accessToken = signAccessToken({
     sub: userId,
-    churchId,
     role,
-    email,
   });
 
-  // Generar refresh token con jti único
   const jti = crypto.randomUUID();
-  const refreshToken = signRefreshToken({ sub: userId, churchId, jti });
+  const refreshToken = signRefreshToken({
+    sub: userId,
+    jti,
+    familyId,
+  });
 
-  // Guardar hash en DB
   const expiresAt = new Date(Date.now() + parseDuration(env.JWT_REFRESH_EXPIRES_IN));
+
   await prisma.refreshToken.create({
     data: {
       userId,
-      churchId,
+      familyId,
       tokenHash: hashToken(refreshToken),
       expiresAt,
-      userAgent: ctx.userAgent,
-      ipAddress: ctx.ipAddress,
     },
   });
 
   return { accessToken, refreshToken };
 }
 
+// ===========================================
+// REFRESH (Rotación con familia)
+// ===========================================
 export async function refreshSession(
   refreshToken: string,
   ctx: SessionContext = {}
 ): Promise<AuthTokens> {
-  const { verifyRefreshToken } = await import('../../lib/jwt.js');
-
   let payload;
   try {
     payload = verifyRefreshToken(refreshToken);
   } catch {
-    throw new AuthError('Refresh token inválido o expirado', 401);
+    throw new AuthError('Refresh token inválido o expirado', 401, 'UNAUTHORIZED');
   }
 
   const tokenHash = hashToken(refreshToken);
@@ -229,8 +235,16 @@ export async function refreshSession(
     where: { tokenHash },
   });
 
+  // Si no existe o ya fue revocado (posible robo)
   if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
-    throw new AuthError('Refresh token revocado o expirado', 401);
+    if (stored && stored.revokedAt) {
+      // Revocar toda la familia por seguridad
+      await prisma.refreshToken.updateMany({
+        where: { familyId: stored.familyId },
+        data: { revokedAt: new Date() },
+      });
+    }
+    throw new AuthError('Refresh token revocado o expirado', 401, 'UNAUTHORIZED');
   }
 
   // Revocar el actual (rotación)
@@ -239,15 +253,18 @@ export async function refreshSession(
     data: { revokedAt: new Date() },
   });
 
-  // Verificar que el usuario siga activo
   const user = await prisma.user.findUnique({ where: { id: payload.sub } });
   if (!user || !user.active) {
-    throw new AuthError('Usuario no válido', 401);
+    throw new AuthError('Usuario no válido', 401, 'UNAUTHORIZED');
   }
 
-  return createSession(user.id, user.churchId, user.role, user.email, ctx);
+  // Emitir nuevos tokens manteniendo el mismo familyId
+  return createSession(user.id, user.role, stored.familyId, ctx);
 }
 
+// ===========================================
+// LOGOUT
+// ===========================================
 export async function logout(refreshToken: string): Promise<void> {
   const tokenHash = hashToken(refreshToken);
   await prisma.refreshToken.updateMany({
@@ -256,6 +273,9 @@ export async function logout(refreshToken: string): Promise<void> {
   });
 }
 
+// ===========================================
+// USUARIO ACTUAL
+// ===========================================
 export async function getCurrentUser(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -267,7 +287,7 @@ export async function getCurrentUser(userId: string) {
       churchId: true,
       phone: true,
       position: true,
-      mustChangePassword: true,  // ← NUEVO
+      mustChangePassword: true,
       createdAt: true,
       church: {
         select: {
@@ -281,9 +301,13 @@ export async function getCurrentUser(userId: string) {
     },
   });
 
-  if (!user) throw new AuthError('Usuario no encontrado', 404);
+  if (!user) throw new AuthError('Usuario no encontrado', 404, 'NOT_FOUND');
   return user;
 }
+
+// ===========================================
+// CAMBIO DE CONTRASEÑA
+// ===========================================
 export async function changeOwnPassword(
   userId: string,
   currentPassword: string,
@@ -293,51 +317,46 @@ export async function changeOwnPassword(
     where: { id: userId },
   });
   if (!user || !user.active) {
-    throw new AuthError('Usuario no válido', 404);
+    throw new AuthError('Usuario no válido', 404, 'NOT_FOUND');
   }
 
-  // Verificar contraseña actual
   const valid = await verifyPassword(user.passwordHash, currentPassword);
   if (!valid) {
-    throw new AuthError('La contraseña actual es incorrecta', 400);
+    throw new AuthError('La contraseña actual es incorrecta', 400, 'VALIDATION_ERROR');
   }
 
-    // Hashear y actualizar
   const newHash = await hashPassword(newPassword);
   await prisma.user.update({
     where: { id: userId },
     data: {
       passwordHash: newHash,
-      mustChangePassword: false,  // ← ya no necesita cambiarla
+      mustChangePassword: false,
     },
   });
 
-  // Revocar todos los refresh tokens (seguridad: forzar re-login en otros dispositivos)
+  // Revocar todos los refresh tokens
   await prisma.refreshToken.updateMany({
     where: { userId, revokedAt: null },
     data: { revokedAt: new Date() },
   });
 }
-// ===========================================
-// PASSWORD RESET
-// ===========================================
 
+// ===========================================
+// RESET PASSWORD
+// ===========================================
 export async function requestPasswordReset(email: string): Promise<void> {
   const user = await prisma.user.findFirst({
     where: { email, active: true },
     include: { church: { select: { name: true } } },
   });
 
-  // Por seguridad, no revelamos si el email existe o no
-  // Siempre devolvemos éxito aunque no exista
   if (!user) {
     console.log(`[auth] Password reset solicitado para email inexistente: ${email}`);
     return;
   }
 
-  // Generar token aleatorio
   const token = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
   await prisma.user.update({
     where: { id: user.id },
@@ -347,7 +366,6 @@ export async function requestPasswordReset(email: string): Promise<void> {
     },
   });
 
-  // Enviar email
   try {
     const { sendPasswordResetEmail } = await import('../../lib/email.js');
     const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${token}`;
@@ -359,24 +377,20 @@ export async function requestPasswordReset(email: string): Promise<void> {
     });
   } catch (err) {
     console.error('[auth] Error al enviar email de reset:', err);
-    // No fallar la request si el email falla
   }
 }
 
-export async function resetPassword(
-  token: string,
-  newPassword: string
-): Promise<void> {
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
   const user = await prisma.user.findFirst({
     where: { resetToken: token },
   });
 
   if (!user) {
-    throw new AuthError('Token inválido', 400);
+    throw new AuthError('Token inválido', 400, 'VALIDATION_ERROR');
   }
 
   if (!user.resetTokenExpiresAt || user.resetTokenExpiresAt < new Date()) {
-    throw new AuthError('El token ha expirado. Solicita uno nuevo.', 400);
+    throw new AuthError('El token ha expirado. Solicita uno nuevo.', 400, 'VALIDATION_ERROR');
   }
 
   const passwordHash = await hashPassword(newPassword);
@@ -391,7 +405,6 @@ export async function resetPassword(
     },
   });
 
-  // Revocar todos los refresh tokens por seguridad
   await prisma.refreshToken.updateMany({
     where: { userId: user.id, revokedAt: null },
     data: { revokedAt: new Date() },

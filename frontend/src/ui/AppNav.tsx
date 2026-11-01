@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Church, ChevronDown, Home, LogOut, MessageSquare, Users } from "lucide-react";
+import { Church, ChevronDown, Home, LogOut, Menu, MessageSquare, Users, X } from "lucide-react";
 import "./AppNav.css";
 
 /* Navegación Fey: barra de iconos fija a la izquierda (escritorio).
    Cerrada muestra el logo y los iconos de los grupos abiertos; abierta muestra
    el nombre de la iglesia, los grupos plegables y el usuario con cerrar sesión.
-   Celular: barra inferior con "Más". */
+   Celular: barra inferior con cuatro accesos y "Menú" para el resto. */
 
 export interface NavItem {
   id: string;
@@ -71,51 +71,104 @@ export function AppNav({ items, activo, onNavegar, usuario, iglesia, label = "Pr
   const principales = items.filter((i) => !FUERA_DE_GRUPOS.includes(i.id));
   const ajustes = items.find((i) => i.id === "ajustes");
   const salir = items.find((i) => i.id === "salir");
+  const grupos = GRUPOS.map((g) => ({
+    nombre: g,
+    items: principales.filter((i) => i.grupo === g),
+  })).filter((g) => g.items.length > 0);
 
   if (movil) {
     const primarios = principales.slice(0, MOVIL_PRIMARIOS);
-    const hayMas = items.length > primarios.length;
+    const cerrarHoja = () => setHojaAbierta(false);
+    const irA = (id: string) => { onNavegar(id); cerrarHoja(); };
     return (
       <>
-        <nav className="fey-tabs" aria-label={label}>
-          {primarios.map((it) => (
-            <button
-              key={it.id}
-              type="button"
-              className="fey-tab"
-              aria-current={activo === it.id ? "page" : undefined}
-              onClick={() => onNavegar(it.id)}
-            >
-              {it.label}
-            </button>
-          ))}
-          {hayMas && (
-            <button type="button" className="fey-tab" aria-expanded={hojaAbierta} onClick={() => setHojaAbierta((v) => !v)}>
-              Más
-            </button>
-          )}
-        </nav>
-        {hojaAbierta && (
-          <div className="fey-hoja" role="dialog" aria-label="Más secciones">
-            {items.map((it) => (
-              <Item
+        <nav className="fey-barra" aria-label={label}>
+          {primarios.map((it) => {
+            const Icono = it.icono;
+            return (
+              <button
                 key={it.id}
-                it={it}
-                activo={activo}
-                onNavegar={(id) => { onNavegar(id); setHojaAbierta(false); }}
-              />
-            ))}
-            <button type="button" className="fey-cerrar" onClick={() => setHojaAbierta(false)}>Cerrar</button>
-          </div>
+                type="button"
+                className="fey-barra-btn"
+                aria-current={activo === it.id ? "page" : undefined}
+                onClick={() => onNavegar(it.id)}
+              >
+                {Icono && <Icono size={22} strokeWidth={1.75} aria-hidden="true" />}
+                <span>{it.label}</span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            className="fey-barra-btn"
+            aria-expanded={hojaAbierta}
+            onClick={() => setHojaAbierta((v) => !v)}
+          >
+            <Menu size={22} strokeWidth={1.75} aria-hidden="true" />
+            <span>Menú</span>
+          </button>
+        </nav>
+
+        {hojaAbierta && (
+          <>
+            <div className="fey-velo" onClick={cerrarHoja} aria-hidden="true" />
+            <div className="fey-hoja" role="dialog" aria-label="Menú">
+              <div className="fey-tirador" aria-hidden="true" />
+              <div className="fey-hoja-head">
+                <b>{iglesia || "Mi iglesia"}</b>
+                <button type="button" className="fey-cerrar" aria-label="Cerrar menú" onClick={cerrarHoja}>
+                  <X size={18} aria-hidden="true" />
+                </button>
+              </div>
+
+              {grupos.map((g) => (
+                <div key={g.nombre}>
+                  <span className="fey-m-grp">{g.nombre}</span>
+                  {g.items.map((it) => {
+                    const Icono = it.icono;
+                    return (
+                      <button
+                        key={it.id}
+                        type="button"
+                        className="fey-m-fila"
+                        aria-current={activo === it.id ? "page" : undefined}
+                        onClick={() => irA(it.id)}
+                      >
+                        {Icono && <Icono size={20} strokeWidth={1.75} aria-hidden="true" />}
+                        <span>{it.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+
+              <div className="fey-m-cuenta">
+                <button
+                  type="button"
+                  className="fey-m-usuario"
+                  aria-current={activo === ajustes?.id ? "page" : undefined}
+                  onClick={() => ajustes && irA(ajustes.id)}
+                >
+                  <span className="fey-avatar" aria-hidden="true">{usuario?.iniciales ?? ""}</span>
+                  <span className="fey-m-usuario-txt">
+                    <b>{usuario?.nombre ?? ""}</b>
+                    <small>{usuario?.rol ?? ""}</small>
+                  </span>
+                </button>
+                {salir && (
+                  <button type="button" className="fey-m-salir" aria-label="Cerrar sesión" onClick={() => irA(salir.id)}>
+                    <LogOut size={20} aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </>
         )}
       </>
     );
   }
 
-  const grupos = GRUPOS.map((g) => ({
-    nombre: g,
-    items: principales.filter((i) => i.grupo === g),
-  })).filter((g) => g.items.length > 0);
+  const visibles = grupos;
 
   return (
     <nav className="fey-rail" aria-label={label}>
@@ -124,8 +177,9 @@ export function AppNav({ items, activo, onNavegar, usuario, iglesia, label = "Pr
         <span className="fey-marca-txt">{iglesia || "Mi iglesia"}</span>
       </div>
 
-      {grupos.map((g) => {
+      {visibles.map((g) => {
         const abierto = plegados[g.nombre] ?? g.items.some((i) => i.id === activo);
+        const Icono = ICONO_GRUPO[g.nombre];
         return (
           <div key={g.nombre} className="fey-grupo">
             <button
@@ -135,7 +189,7 @@ export function AppNav({ items, activo, onNavegar, usuario, iglesia, label = "Pr
               title={g.nombre}
               onClick={() => setPlegados((s) => ({ ...s, [g.nombre]: !abierto }))}
             >
-              {(() => { const Icono = ICONO_GRUPO[g.nombre]; return <Icono size={20} strokeWidth={1.75} aria-hidden="true" />; })()}
+              <Icono size={20} strokeWidth={1.75} aria-hidden="true" />
               <span className="fey-grp-txt">{g.nombre}</span>
               <ChevronDown className={`fey-chev${abierto ? "" : " is-cerrado"}`} size={14} aria-hidden="true" />
             </button>

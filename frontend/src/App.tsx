@@ -60,11 +60,11 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
-  const { loadUser } = useAuth();
+  const restoreSession = useAuth((s) => s.restoreSession);
 
   useEffect(() => {
-    loadUser();
-  }, [loadUser]);
+    void restoreSession();
+  }, [restoreSession]);
 
   return (
     <Routes>

@@ -1,4 +1,4 @@
-export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'LEADER' | 'TECHNICIAN';
+export type UserRole = 'DEV' | 'ADMIN' | 'LEADER' | 'SIERVO';
 // ===========================================
 // MINISTERIOS
 // ===========================================

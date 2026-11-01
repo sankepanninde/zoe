@@ -35,7 +35,6 @@ model Church {
   serviceTypes   ServiceType[]
   services       Service[]
   auditLogs      AuditLog[]
-  refreshTokens  RefreshToken[]
   ministries     Ministry[]
   positionRequirements PositionRequirement[]
 
@@ -64,7 +63,7 @@ model User {
   phone        String?
   avatarUrl    String?
 
-    role               Role     @default(TECHNICIAN)
+  role               Role     @default(SIERVO)
   position           String?
   active             Boolean  @default(true)
   mustChangePassword Boolean  @default(false)
@@ -83,6 +82,7 @@ model User {
   refreshTokens  RefreshToken[]
   auditLogs      AuditLog[]
   ministries     UserMinistry[]
+  calendarToken CalendarToken?
 
   @@unique([churchId, email])
   @@index([churchId])
@@ -90,10 +90,10 @@ model User {
 }
 
 enum Role {
-  SUPER_ADMIN
-  ADMIN
   LEADER
-  TECHNICIAN
+  ADMIN
+  DEV
+  SIERVO
 }
 
 // ===========================================
@@ -103,20 +103,15 @@ model RefreshToken {
   id         String   @id @default(cuid())
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  churchId   String
-  church     Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
-
+  familyId   String   // <-- NUEVO: Para revocar toda la cadena si hay robo
   tokenHash  String   @unique
   expiresAt  DateTime
   revokedAt  DateTime?
-  userAgent  String?
-  ipAddress  String?
-
+  
   createdAt  DateTime @default(now())
 
   @@index([userId])
-  @@index([churchId])
-  @@index([expiresAt])
+  @@index([familyId])
 }
 
 // ===========================================
@@ -160,6 +155,7 @@ model Service {
   endTime       String
   location      String?
   notes         String?
+  deletedAt DateTime?
 
   // ===========================================
   // CAMPOS ESPECÍFICOS PARA EL MINISTERIO DE SONIDO
@@ -212,6 +208,7 @@ model Assignment {
 
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+  deletedAt DateTime?
 
   @@unique([serviceId, userId])
   @@index([serviceId])
@@ -271,20 +268,26 @@ model AvailabilityService {
   @@index([serviceId])
 }
 
+enum RepeatFrequency {
+  NINGUNA
+  ANUAL
+  MENSUAL
+}
+
 model AvailabilityBlock {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  
   desde     DateTime
   hasta     DateTime
+  repite    RepeatFrequency @default(NINGUNA) // <-- NUEVO
   motivo    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
-  @@index([userId, desde, hasta])
 }
 
 // ===========================================
@@ -387,4 +390,17 @@ model PositionRequirement {
 enum Shift {
   MORNING    // 1er turno (mañana)
   AFTERNOON  // 2do turno (tarde)
+}
+// ===========================================
+// CALENDAR TOKENS (.ics)
+// ===========================================
+model CalendarToken {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }

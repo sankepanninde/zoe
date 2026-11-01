@@ -19,7 +19,7 @@ export const createUserSchema = z.object({
   email: z.string().email('Email inválido').toLowerCase(),
   password: z.string().min(8, 'Mínimo 8 caracteres').max(72),
   phone: z.string().max(20).optional().nullable(),
-  role: z.enum(['ADMIN', 'LEADER', 'TECHNICIAN']).default('TECHNICIAN'),
+  role: z.enum(['ADMIN', 'LEADER', 'SIERVO']).default('SIERVO'),
   ministries: z.array(userMinistrySchema).default([]),
 });
 
@@ -30,7 +30,7 @@ export const createUserSchema = z.object({
 export const updateUserSchema = z.object({
   name: z.string().min(2).max(100).optional(),
   phone: z.string().max(20).optional().nullable(),
-  role: z.enum(['ADMIN', 'LEADER', 'TECHNICIAN']).optional(),
+  role: z.enum(['ADMIN', 'LEADER', 'SIERVO']).optional(),
   active: z.boolean().optional(),
   // Si viene, reemplaza la lista completa de ministerios del usuario
   ministries: z.array(userMinistrySchema).optional(),

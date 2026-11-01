@@ -1,266 +1,150 @@
 import { prisma } from '../../lib/prisma.js';
+import { AuthError } from '../auth/auth.service.js';
+import { getAvailabilityQuerySchema } from './availability.schemas.js';
 
-// ===========================================
-// LIST MY AVAILABILITY
-// ===========================================
+// Helpers para fechas en Bogotá
+const getBogotaDate = (date: Date) => {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Bogota',
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(date);
+};
 
-export async function listMyAvailability(
-  userId: string,
-  year: number,
-  month: number
-) {
-  const start = new Date(Date.UTC(year, month, 1));
-  const end = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59));
+export async function getMyAvailability(userId: string, query: { desde: string; hasta: string }) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new AuthError('Usuario no encontrado', 404);
 
-  return prisma.availability.findMany({
-    where: {
-      userId,
-      date: { gte: start, lte: end },
-    },
-    select: {
-      id: true,
-      date: true,
-      available: true,
-      reason: true,
-    },
-    orderBy: { date: 'asc' },
+  const start = new Date(`${query.desde}T00:00:00.000-05:00`);
+  const end = new Date(`${query.hasta}T23:59:59.999-05:00`);
+
+  // 1. Traer bloqueos del usuario
+  const blocks = await prisma.availabilityBlock.findMany({
+    where: { userId },
   });
-}
 
-// ===========================================
-// TOGGLE SINGLE DAY
-// ===========================================
-
-export async function toggleDay(
-  userId: string,
-  dateStr: string,
-  available: boolean,
-  reason?: string | null
-) {
-  const date = new Date(`${dateStr}T00:00:00.000Z`);
-
-  return prisma.availability.upsert({
-    where: {
-      userId_date: { userId, date },
-    },
-    create: {
-      userId,
-      date,
-      available,
-      reason: reason ?? null,
-    },
-    update: {
-      available,
-      reason: reason ?? null,
-    },
-    select: {
-      id: true,
-      date: true,
-      available: true,
-      reason: true,
-    },
+  // 2. Traer configuraciones de días
+  const daysConfig = await prisma.availability.findMany({
+    where: { userId, date: { gte: start, lte: end } },
   });
-}
+  const dayConfigMap = new Map(daysConfig.map(d => [d.date.toISOString().slice(0, 10), d.available]));
 
-// ===========================================
-// BULK TOGGLE (múltiples días de una vez)
-// ===========================================
-
-export async function bulkToggle(
-  userId: string,
-  dates: string[],
-  available: boolean,
-  reason?: string | null
-) {
-  if (dates.length === 0) return [];
-
-  return prisma.$transaction(
-    dates.map((dateStr) => {
-      const date = new Date(`${dateStr}T00:00:00.000Z`);
-      return prisma.availability.upsert({
-        where: { userId_date: { userId, date } },
-        create: {
-          userId,
-          date,
-          available,
-          reason: reason ?? null,
-        },
-        update: {
-          available,
-          reason: reason ?? null,
-        },
-        select: {
-          id: true,
-          date: true,
-          available: true,
-          reason: true,
-        },
-      });
-    })
-  );
-}
-
-// ===========================================
-// CLEAR MY AVAILABILITY FOR MONTH
-// ===========================================
-
-export async function clearMonth(userId: string, year: number, month: number) {
-  const start = new Date(Date.UTC(year, month, 1));
-  const end = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59));
-
-  await prisma.availability.deleteMany({
-    where: {
-      userId,
-      date: { gte: start, lte: end },
-    },
+  // 3. Traer estados de servicios
+  const serviceConfigs = await prisma.availabilityService.findMany({
+    where: { userId },
   });
-}
+  const serviceConfigMap = new Map(serviceConfigs.map(s => [s.serviceId, s.estado]));
 
-// ===========================================
-// LIST USER AVAILABILITY (para líderes)
-// ===========================================
+  // 4. Traer servicios en el rango (que pertenezcan a los ministerios del usuario o de la iglesia)
+  const userMinistries = await prisma.userMinistry.findMany({ where: { userId } });
+  const ministryIds = userMinistries.map(m => m.ministryId);
 
-export async function listUserAvailability(
-  userId: string,
-  year: number,
-  month: number
-) {
-  const start = new Date(Date.UTC(year, month, 1));
-  const end = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59));
-
-  return prisma.availability.findMany({
-    where: {
-      userId,
-      date: { gte: start, lte: end },
-    },
-    select: {
-      id: true,
-      date: true,
-      available: true,
-      reason: true,
-    },
-    orderBy: { date: 'asc' },
-  });
-}
-// ===========================================
-// ESTADO EFECTIVO + LISTA DE SERVICIOS
-// ===========================================
-
-export type EffectiveState = 'DISPONIBLE' | 'NO_DISPONIBLE' | 'PENDIENTE';
-export type EffectiveSource = 'servicio' | 'bloqueo' | 'pendiente';
-
-interface EffectiveResult {
-  estado: EffectiveState;
-  fuente: EffectiveSource;
-}
-
-/**
- * Calcula el estado efectivo de (userId, serviceId, fecha), respetando prioridad:
- *   a) bloqueo → NO_DISPONIBLE (fuente "bloqueo")
- *   b) AvailabilityService → su estado (fuente "servicio")
- *   c) sin datos → PENDIENTE (fuente "pendiente")
- */
-export async function getEffectiveState(
-  userId: string,
-  serviceId: string,
-  fecha: Date
-): Promise<EffectiveResult> {
-  const dayKey = fecha.toISOString().slice(0, 10);
-  const dayStart = new Date(`${dayKey}T00:00:00.000Z`);
-  const dayEnd = new Date(`${dayKey}T23:59:59.999Z`);
-
-  // a) ¿Está dentro de un bloqueo?
-  const block = await prisma.availabilityBlock.findFirst({
-    where: {
-      userId,
-      desde: { lte: dayEnd },
-      hasta: { gte: dayStart },
-    },
-  });
-  if (block) {
-    return { estado: 'NO_DISPONIBLE', fuente: 'bloqueo' };
-  }
-
-  // b) ¿Hay fila explícita?
-  const row = await prisma.availabilityService.findUnique({
-    where: { userId_serviceId: { userId, serviceId } },
-    select: { estado: true },
-  });
-  if (row) {
-    return { estado: row.estado, fuente: 'servicio' };
-  }
-
-  // c) Pendiente
-  return { estado: 'PENDIENTE', fuente: 'pendiente' };
-}
-
-// ===========================================
-// GET /availability/me/services
-// ===========================================
-
-interface ServiceDayItem {
-  serviceId: string;
-  nombre: string;
-  ministerio: string | null;
-  horaInicio: string;
-  horaFin: string;
-  estado: EffectiveState;
-  fuente: EffectiveSource;
-}
-
-interface DayGroup {
-  fecha: string;
-  bloqueado: boolean;
-  servicios: ServiceDayItem[];
-}
-
-export async function listServicesWithAvailability(
-  userId: string,
-  desde: string,
-  hasta: string
-) {
-  const start = new Date(`${desde}T00:00:00.000Z`);
-  const end = new Date(`${hasta}T23:59:59.999Z`);
-
-  // 1. Datos del usuario (para saber churchId y ministerios)
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { churchId: true },
-  });
-  if (!user) {
-    const err = new Error('Usuario no encontrado');
-    (err as Error & { statusCode: number }).statusCode = 404;
-    throw err;
-  }
-
-  // 2. Servicios en el rango (todos los de la iglesia)
   const services = await prisma.service.findMany({
     where: {
       churchId: user.churchId,
+      deletedAt: null,
       date: { gte: start, lte: end },
+      OR: [
+        { assignments: { some: { userId } } }, // asignado directo
+        // Asumiendo que todos los servicios de la iglesia aplican, o filtramos por ministerio:
+        // Si Service tuviera ministryId, lo filtraríamos aquí.
+      ]
     },
-    select: {
-      id: true,
-      title: true,
-      date: true,
-      startTime: true,
-      endTime: true,
-      serviceType: { select: { name: true } },
-    },
-    orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+    include: { serviceType: true, assignments: { include: { ministry: true } } }
   });
 
-  // 3. Filas explícitas del usuario
-  const explicit = await prisma.availabilityService.findMany({
-    where: {
-      userId,
-      serviceId: { in: services.map((s) => s.id) },
-    },
-    select: { serviceId: true, estado: true },
-  });
-  const explicitMap = new Map(explicit.map((e) => [e.serviceId, e.estado]));
+  // Procesar días
+  const result = [];
+  const current = new Date(start);
+  
+  while (current <= end) {
+    const dateStr = current.toISOString().slice(0, 10);
+    const dayOfMonth = current.getDate();
+    const month = current.getMonth();
+    
+    // Lógica de bloqueos
+    let bloqueado = false;
+    for (const block of blocks) {
+      if (block.repite === 'NINGUNA' || !block.repite) {
+        if (dateStr >= block.desde.toISOString().slice(0, 10) && dateStr <= block.hasta.toISOString().slice(0, 10)) {
+          bloqueado = true; break;
+        }
+      } else {
+        // Repetición lógica mensual/anual en Bogotá
+        const blockStart = new Date(block.desde);
+        if (block.repite === 'MENSUAL' && blockStart.getDate() === dayOfMonth) bloqueado = true;
+        if (block.repite === 'ANUAL' && blockStart.getDate() === dayOfMonth && blockStart.getMonth() === month) bloqueado = true;
+      }
+    }
 
-  // 4. Bloqueos que intersectan el rango
+    const dayOverride = dayConfigMap.get(dateStr);
+    const estadoDia = dayOverride === true ? 'DISPONIBLE' : dayOverride === false ? 'NO_DISPONIBLE' : null;
+
+    const servicesOfDay = services.filter(s => getBogotaDate(s.date) === dateStr).map(s => {
+      const assignedMinistry = s.assignments.find(a => a.userId === userId)?.ministry?.name ?? 'Iglesia';
+      const sConfig = serviceConfigMap.get(s.id);
+      
+      let estado: string = 'PENDIENTE';
+      let fuente: string = 'pendiente';
+      
+      if (bloqueado) {
+        estado = 'NO_DISPONIBLE'; fuente = 'bloqueo';
+      } else if (sConfig) {
+        estado = sConfig; fuente = 'servicio';
+      } else if (dayOverride !== undefined) {
+        estado = dayOverride ? 'DISPONIBLE' : 'NO_DISPONIBLE'; fuente = 'dia';
+      }
+
+      return {
+        serviceId: s.id,
+        nombre: s.title ?? s.serviceType.name,
+        tipo: s.serviceType.name,
+        ministerio: assignedMinistry,
+        horaInicio: s.startTime,
+        horaFin: s.endTime,
+        estado,
+        fuente,
+      };
+    });
+
+    result.push({
+      fecha: dateStr,
+      bloqueado,
+      estado: estadoDia,
+      servicios: servicesOfDay,
+    });
+
+    current.setDate(current.getDate() + 1);
+  }
+
+    // Formatear bloqueos con las fechas originales (sin expandir)
+  const bloqueos = blocks.map((b) => ({
+    id: b.id,
+    desde: b.desde.toISOString().slice(0, 10),
+    hasta: b.hasta.toISOString().slice(0, 10),
+    repite:
+      b.repite === 'ANUAL'
+        ? 'anual'
+        : b.repite === 'MENSUAL'
+          ? 'mensual'
+          : 'ninguna',
+    motivo: b.motivo ?? null,
+  }));
+
+  return { dias: result, bloqueos };
+}
+
+// ===========================================
+// GET /availability/me/blocks
+// ===========================================
+export async function listBlocks(
+  userId: string,
+  query: { desde: string; hasta: string }
+) {
+  const start = new Date(`${query.desde}T00:00:00.000-05:00`);
+  const end = new Date(`${query.hasta}T23:59:59.999-05:00`);
+
+  // Solapamiento: el bloqueo [b.desde, b.hasta] se solapa con [start, end] si:
+  //   b.desde <= end  AND  b.hasta >= start
   const blocks = await prisma.availabilityBlock.findMany({
     where: {
       userId,
@@ -268,220 +152,79 @@ export async function listServicesWithAvailability(
       hasta: { gte: start },
     },
     orderBy: { desde: 'asc' },
-    select: { id: true, desde: true, hasta: true, motivo: true },
   });
 
-  // Helper: ¿una fecha cae en algún bloqueo?
-  const isBlocked = (date: Date) =>
-    blocks.some((b) => b.desde <= date && b.hasta >= date);
-
-  // 5. Agrupar por día (incluyendo días sin servicios)
-  const dayMap = new Map<string, DayGroup>();
-
-  // 5.a Rellenar todos los días del rango
-  const cursor = new Date(start);
-  while (cursor <= end) {
-    const key = cursor.toISOString().slice(0, 10);
-    dayMap.set(key, {
-      fecha: key,
-      bloqueado: isBlocked(cursor),
-      servicios: [],
-    });
-    cursor.setUTCDate(cursor.getUTCDate() + 1);
-  }
-
-  // 5.b Añadir servicios
-  for (const s of services) {
-    const key = s.date.toISOString().slice(0, 10);
-    const day = dayMap.get(key);
-    if (!day) continue;
-
-    const effective = getEffectiveFromMaps(s.id, s.date, explicitMap, day.bloqueado);
-
-    day.servicios.push({
-      serviceId: s.id,
-      nombre: s.title ?? s.serviceType.name,
-      ministerio: null,
-      horaInicio: s.startTime,
-      horaFin: s.endTime,
-      estado: effective.estado,
-      fuente: effective.fuente,
-    });
-  }
-
-  return {
-    dias: Array.from(dayMap.values()),
-    bloqueos: blocks.map((b) => ({
-      id: b.id,
-      desde: b.desde.toISOString().slice(0, 10),
-      hasta: b.hasta.toISOString().slice(0, 10),
-      motivo: b.motivo,
-    })),
-  };
+  // Devolvemos con las fechas originales (NO expandimos repetidos)
+  return blocks.map((b) => ({
+    id: b.id,
+    desde: b.desde.toISOString().slice(0, 10),
+    hasta: b.hasta.toISOString().slice(0, 10),
+    repite:
+      b.repite === 'ANUAL'
+        ? 'anual'
+        : b.repite === 'MENSUAL'
+          ? 'mensual'
+          : 'ninguna',
+    motivo: b.motivo ?? null,
+  }));
 }
 
-// Helper sincrónico para calcular el estado desde los maps ya cargados
-function getEffectiveFromMaps(
-  serviceId: string,
-  date: Date,
-  explicitMap: Map<string, 'DISPONIBLE' | 'NO_DISPONIBLE'>,
-  blocked: boolean
-): EffectiveResult {
-  if (blocked) return { estado: 'NO_DISPONIBLE', fuente: 'bloqueo' };
-  const explicit = explicitMap.get(serviceId);
-  if (explicit) return { estado: explicit, fuente: 'servicio' };
-  return { estado: 'PENDIENTE', fuente: 'pendiente' };
+export async function setDayState(userId: string, fecha: string, estado: 'DISPONIBLE' | 'NO_DISPONIBLE') {
+  const date = new Date(`${fecha}T12:00:00.000Z`); // Mediodía para evitar problemas de TZ
+  const available = estado === 'DISPONIBLE';
+
+  await prisma.availability.upsert({
+    where: { userId_date: { userId, date } },
+    update: { available },
+    create: { userId, date, available },
+  });
 }
 
-// ===========================================
-// PUT /availability/me/services/:serviceId
-// ===========================================
+export async function setServiceState(userId: string, serviceId: string, estado: 'DISPONIBLE' | 'NO_DISPONIBLE' | null) {
+  // Validar que el servicio existe y el usuario tiene acceso (ej. está en un ministerio relacionado)
+  const service = await prisma.service.findUnique({ where: { id: serviceId } });
+  if (!service) throw new AuthError('Servicio no encontrado', 404);
 
-export async function setServiceState(
-  userId: string,
-  serviceId: string,
-  estado: 'DISPONIBLE' | 'NO_DISPONIBLE' | null
-) {
-  // Verificar que el servicio existe y es de la iglesia del usuario
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { churchId: true },
-  });
-  if (!user) {
-    const err = new Error('Usuario no encontrado');
-    (err as Error & { statusCode: number }).statusCode = 404;
-    throw err;
-  }
-
-  const svc = await prisma.service.findFirst({
-    where: { id: serviceId, churchId: user.churchId },
-  });
-  if (!svc) {
-    const err = new Error('Servicio no encontrado');
-    (err as Error & { statusCode: number }).statusCode = 404;
-    throw err;
-  }
-
-  // estado === null → borrar fila
   if (estado === null) {
-    await prisma.availabilityService.deleteMany({
-      where: { userId, serviceId },
+    await prisma.availabilityService.deleteMany({ where: { userId, serviceId } });
+  } else {
+    await prisma.availabilityService.upsert({
+      where: { userId_serviceId: { userId, serviceId } },
+      update: { estado },
+      create: { userId, serviceId, estado },
     });
-    return { serviceId, estado: null };
   }
-
-  const row = await prisma.availabilityService.upsert({
-    where: { userId_serviceId: { userId, serviceId } },
-    create: { userId, serviceId, estado },
-    update: { estado },
-    select: { serviceId: true, estado: true, updatedAt: true },
-  });
-  return row;
 }
 
-// ===========================================
-// PUT /availability/me/days/:fecha
-// ===========================================
-
-export async function setDayState(
-  userId: string,
-  fecha: string,
-  estado: 'DISPONIBLE' | 'NO_DISPONIBLE'
-) {
-  const dayStart = new Date(`${fecha}T00:00:00.000Z`);
-  const dayEnd = new Date(`${fecha}T23:59:59.999Z`);
-
-  // ¿El día cae en un bloqueo?
-  const block = await prisma.availabilityBlock.findFirst({
-    where: {
-      userId,
-      desde: { lte: dayEnd },
-      hasta: { gte: dayStart },
-    },
-  });
-  if (block) {
-    const err = new Error(
-      'El día está dentro de un bloqueo. Elimina el bloqueo antes de marcarlo.'
-    );
-    (err as Error & { statusCode: number }).statusCode = 409;
-    throw err;
-  }
-
-  // Servicios de ese día del usuario
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { churchId: true },
-  });
-  if (!user) {
-    const err = new Error('Usuario no encontrado');
-    (err as Error & { statusCode: number }).statusCode = 404;
-    throw err;
-  }
-
-  const services = await prisma.service.findMany({
-    where: {
-      churchId: user.churchId,
-      date: { gte: dayStart, lte: dayEnd },
-    },
-    select: { id: true },
-  });
-
-  if (services.length === 0) {
-    return { fecha, estado, updated: 0 };
-  }
-
-  // Upsert en transacción
-  await prisma.$transaction(
-    services.map((s) =>
-      prisma.availabilityService.upsert({
-        where: { userId_serviceId: { userId, serviceId: s.id } },
-        create: { userId, serviceId: s.id, estado },
-        update: { estado },
-      })
-    )
-  );
-
-  return { fecha, estado, updated: services.length };
-}
-
-// ===========================================
-// BLOCKS
-// ===========================================
-
-export async function createBlock(
-  userId: string,
-  desde: string,
-  hasta: string,
-  motivo?: string | null
-) {
-  const desdeDate = new Date(`${desde}T00:00:00.000Z`);
-  const hastaDate = new Date(`${hasta}T23:59:59.999Z`);
+export async function createBlock(userId: string, data: { desde: string; hasta: string; repite: string; motivo?: string }) {
+  const desde = new Date(`${data.desde}T12:00:00.000Z`);
+  const hasta = new Date(`${data.hasta}T12:00:00.000Z`);
+  
+  // Prisma enum mapping
+  const repiteEnum = data.repite === 'anual' ? 'ANUAL' : data.repite === 'mensual' ? 'MENSUAL' : 'NINGUNA';
 
   return prisma.availabilityBlock.create({
-    data: {
-      userId,
-      desde: desdeDate,
-      hasta: hastaDate,
-      motivo: motivo ?? null,
-    },
-    select: {
-      id: true,
-      desde: true,
-      hasta: true,
-      motivo: true,
-      createdAt: true,
-    },
+    data: { userId, desde, hasta, repite: repiteEnum, motivo: data.motivo }
   });
 }
 
-export async function deleteBlock(userId: string, blockId: string) {
-  const block = await prisma.availabilityBlock.findFirst({
-    where: { id: blockId, userId },
+export async function updateBlock(userId: string, id: string, data: any) {
+  const block = await prisma.availabilityBlock.findFirst({ where: { id, userId } });
+  if (!block) throw new AuthError('Bloqueo no encontrado', 404);
+
+  return prisma.availabilityBlock.update({
+    where: { id },
+    data: {
+      ...(data.desde && { desde: new Date(`${data.desde}T12:00:00.000Z`) }),
+      ...(data.hasta && { hasta: new Date(`${data.hasta}T12:00:00.000Z`) }),
+      ...(data.repite && { repite: data.repite === 'anual' ? 'ANUAL' : data.repite === 'mensual' ? 'MENSUAL' : 'NINGUNA' }),
+      ...(data.motivo !== undefined && { motivo: data.motivo }),
+    }
   });
-  if (!block) {
-    const err = new Error('Bloqueo no encontrado');
-    (err as Error & { statusCode: number }).statusCode = 404;
-    throw err;
-  }
-  await prisma.availabilityBlock.delete({ where: { id: blockId } });
+}
+
+export async function deleteBlock(userId: string, id: string) {
+  const block = await prisma.availabilityBlock.findFirst({ where: { id, userId } });
+  if (!block) throw new AuthError('Bloqueo no encontrado', 404);
+  await prisma.availabilityBlock.delete({ where: { id } });
 }

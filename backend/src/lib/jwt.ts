@@ -2,17 +2,17 @@ import jwt from 'jsonwebtoken';
 import crypto from 'node:crypto';
 import { env } from './env.js';
 
+// Access Token: solo sub y role (sin datos personales)
 export interface AccessTokenPayload {
   sub: string;
-  churchId: string;
   role: string;
-  email: string;
 }
 
+// Refresh Token: sub, jti y familyId (para rotación segura)
 export interface RefreshTokenPayload {
   sub: string;
-  churchId: string;
   jti: string;
+  familyId: string;
 }
 
 export function signAccessToken(payload: AccessTokenPayload): string {
@@ -41,16 +41,10 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload {
   }) as RefreshTokenPayload;
 }
 
-/**
- * Hash determinístico del refresh token para guardarlo en DB sin exponerlo.
- */
 export function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-/**
- * Parsea la duración (ej "7d", "15m") a milisegundos.
- */
 export function parseDuration(duration: string): number {
   const match = duration.match(/^(\d+)([smhd])$/);
   if (!match || !match[1] || !match[2]) {

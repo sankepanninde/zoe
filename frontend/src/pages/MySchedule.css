@@ -1,0 +1,286 @@
+.ms-page {
+  display: grid;
+  gap: 20px;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 24px 0;
+  color: var(--fg);
+}
+
+.ms-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.ms-title {
+  margin: 4px 0;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 600;
+}
+
+.ms-year {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ms-year__num {
+  min-width: 56px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.ms-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.ms-stat {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card-bg);
+}
+
+.ms-stat dt {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.ms-stat dd {
+  margin: 4px 0 0;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.ms-next {
+  display: grid;
+  gap: 8px;
+}
+
+.ms-next__fecha {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.ms-next__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ms-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.ms-error {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-color: var(--no);
+}
+
+.ms-months {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.ms-month__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+
+.ms-month__head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.ms-days {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ms-day {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.ms-day__fecha {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ms-day__dow {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ms-day__num {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.ms-day__servicios {
+  display: grid;
+  gap: 6px;
+}
+
+.ms-svc {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.ms-svc__hora {
+  font-weight: 600;
+}
+
+.ms-badge {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.ms-badge--confirmed {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.ms-badge--pending {
+  border-color: var(--warm);
+  color: var(--warm);
+}
+
+.ms-badge--rejected {
+  border-color: var(--no);
+  color: var(--no);
+}
+
+.ms-mini {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.ms-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.ms-modal {
+  width: min(440px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.ms-modal__title {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.ms-radios {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.ms-radios label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.ms-err {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--no);
+}
+
+.ms-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .ms-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tarjeta de calendario */
+.ms-cal { display: grid; gap: 14px; }
+.ms-cal__titulo { margin: 4px 0 0; font-size: 18px; font-weight: 600; }
+.ms-cal__campo { display: flex; gap: 8px; align-items: center; }
+.ms-cal__campo .k-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.ms-cal .k-btn {
+  width: auto;
+  min-height: 44px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ms-cal__campo .k-btn { flex: 0 0 auto; }
+.ms-cal .ms-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ms-small { font-size: 12px; color: var(--muted); }
+.ms-cal__pasos { font-size: 13px; color: var(--muted); }
+.ms-cal__pasos summary { cursor: pointer; color: var(--fg); font-weight: 600; }
+.ms-cal__pasos li { margin: 6px 0; }

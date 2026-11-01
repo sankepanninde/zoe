@@ -60,10 +60,10 @@ export function AssignmentsSection({
 }: AssignmentsSectionProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
-  const isTechnician = user?.role === 'TECHNICIAN';
-  // Un técnico NUNCA puede asignar (aunque el prop falle)
-  const effectiveReadOnly = readOnly || isTechnician;
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'DEV';
+  const isSiervo = user?.role === 'SIERVO';
+  // Un siervo NUNCA puede asignar (aunque el prop falle)
+  const effectiveReadOnly = readOnly || isSiervo;
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedMinistryId, setSelectedMinistryId] = useState('');

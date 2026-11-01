@@ -22,5 +22,5 @@
     "noEmitOnError": true
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "prisma/seed-ministries.ts"]
+  "exclude": ["node_modules", "dist", "prisma/seed-ministries.ts", "**/*.test.ts", "tests"]
 }

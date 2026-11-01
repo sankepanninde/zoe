@@ -1,36 +1,32 @@
-import type { ReactNode } from "react";
-import type { RolVista } from "./PanelRol";
+import { useEffect, useRef, useState } from "react";
 import "./Inicio.css";
 
-/* Inicio por rol (Siervo, Líder, Pastor). Mismo contenido que la vista interactiva.
-   Los datos de abajo son de ejemplo: reemplazarlos por los del backend. */
+export type RolVista = "te" | "le" | "ad" | "dev";
 
 interface Props {
   rol: RolVista;
   nombre: string;
-  /** Lleva a otra sección del menú (por ejemplo "disp"). */
-  onNavegar?: (id: string) => void;
 }
 
-const semanas = ["S-7", "S-6", "S-5", "S-4", "S-3", "S-2", "S-1", "Esta"];
+const W = 400, H = 180, PAD = 28;
 
-/* Gráfica de barras: meta punteada, barras bajo la meta en naranja, la última en blanco. */
-function Barras({ vals, labels, meta, label }: { vals: number[]; labels: string[]; meta: number; label: string }) {
-  const w = 600, h = 170, padB = 26, padT = 12, usable = h - padB - padT;
-  const slot = (w - 16) / vals.length, bw = slot * 0.56;
-  const my = h - padB - (meta / 100) * usable;
+function Barras({ datos, max, color, etiquetas, label }: { datos: number[]; max: number; color: string; etiquetas: string[]; label: string }) {
+  const ancho = (W - PAD * 2) / datos.length;
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} width="100%" role="img" aria-label={label} className="chart">
-      <line x1={0} x2={w} y1={my} y2={my} className="chart__meta" />
-      <text x={w} y={my - 6} textAnchor="end" className="chart__txt">Meta {meta}%</text>
-      {vals.map((v, i) => {
-        const x = 8 + i * slot + (slot - bw) / 2;
-        const bh = (v / 100) * usable;
-        const cls = i === vals.length - 1 ? "chart__bar--ultima" : v < meta ? "chart__bar--bajo" : "chart__bar";
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} className="ch">
+      {[0, 1, 2, 3].map((i) => {
+        const y = PAD / 2 + ((H - PAD * 1.5) * i) / 3;
+        return <line key={i} x1={PAD} x2={W - PAD / 2} y1={y} y2={y} className="ch-grid" />;
+      })}
+      {datos.map((v, i) => {
+        const h = ((H - PAD * 1.5) * v) / max;
+        const x = PAD + i * ancho + ancho * 0.2;
         return (
-          <g key={labels[i]}>
-            <rect x={x} y={h - padB - bh} width={bw} height={bh} rx={6} className={cls} />
-            <text x={x + bw / 2} y={h - 8} textAnchor="middle" className="chart__txt">{labels[i]}</text>
+          <g key={i}>
+            <rect x={x} y={H - PAD - h} width={ancho * 0.6} height={h} rx={6} fill={color}>
+              <title>{`${etiquetas[i]}: ${v}`}</title>
+            </rect>
+            <text x={x + ancho * 0.3} y={H - 8} textAnchor="middle" className="ch-txt">{etiquetas[i]}</text>
           </g>
         );
       })}
@@ -38,157 +34,253 @@ function Barras({ vals, labels, meta, label }: { vals: number[]; labels: string[
   );
 }
 
-/* Gráfica de línea con meta. */
-function Linea({ vals, labels, meta, label }: { vals: number[]; labels: string[]; meta: number; label: string }) {
-  const w = 600, h = 170, padB = 26, padT = 12, usable = h - padB - padT;
-  const xs = vals.map((_, i) => 8 + (i * (w - 16)) / (vals.length - 1));
-  const ys = vals.map((v) => h - padB - (v / 100) * usable);
-  const my = h - padB - (meta / 100) * usable;
-  const last = vals.length - 1;
+function Linea({ datos, max, etiquetas, label }: { datos: number[]; max: number; etiquetas: string[]; label: string }) {
+  const paso = (W - PAD * 2) / (datos.length - 1);
+  const pts = datos.map((v, i) => ({ x: PAD + i * paso, y: H - PAD - ((H - PAD * 1.5) * v) / max, v }));
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} width="100%" role="img" aria-label={label} className="chart">
-      <line x1={0} x2={w} y1={my} y2={my} className="chart__meta" />
-      <text x={w} y={my - 6} textAnchor="end" className="chart__txt">Meta {meta}%</text>
-      <polyline points={xs.map((x, i) => `${x},${ys[i]}`).join(" ")} className="chart__linea" />
-      {vals.map((v, i) => (
-        <g key={labels[i]}>
-          <circle cx={xs[i]} cy={ys[i]} r={i === last ? 5 : 3} className={v < meta ? "chart__bar--bajo" : i === last ? "chart__bar--ultima" : "chart__bar"} />
-          <text x={xs[i]} y={h - 8} textAnchor="middle" className="chart__txt">{labels[i]}</text>
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} className="ch">
+      {[0, 1, 2, 3].map((i) => {
+        const y = PAD / 2 + ((H - PAD * 1.5) * i) / 3;
+        return <line key={i} x1={PAD} x2={W - PAD / 2} y1={y} y2={y} className="ch-grid" />;
+      })}
+      <polyline points={pts.map((p) => `${p.x},${p.y}`).join(" ")} className="ch-linea" />
+      {pts.map((p, i) => (
+        <g key={i}>
+          <circle cx={p.x} cy={p.y} r={5} className="ch-punto"><title>{`${etiquetas[i]}: ${p.v}`}</title></circle>
+          <text x={p.x} y={H - 8} textAnchor="middle" className="ch-txt">{etiquetas[i]}</text>
         </g>
       ))}
     </svg>
   );
 }
 
-function Panel({ titulo, sub, children }: { titulo: string; sub?: string; children: ReactNode }) {
+function Bandeja() {
+  const [abierta, setAbierta] = useState(false);
+  const [items, setItems] = useState([
+    { id: "m", t: "Mensajes del equipo", n: 5 },
+    { id: "c", t: "Comentarios en anuncios", n: 3 },
+    { id: "a", t: "Solicitudes de acceso", n: 2 },
+  ]);
+  const ref = useRef<HTMLDivElement>(null);
+  const total = items.reduce((s, i) => s + i.n, 0);
+
+  useEffect(() => {
+    if (!abierta) return;
+    const cerrar = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setAbierta(false);
+    };
+    document.addEventListener("click", cerrar);
+    return () => document.removeEventListener("click", cerrar);
+  }, [abierta]);
+
+  const leer = (id: string) => setItems((p) => p.map((i) => (i.id === id ? { ...i, n: 0 } : i)));
+  const leerTodo = () => setItems((p) => p.map((i) => ({ ...i, n: 0 })));
+
   return (
-    <section className="panel panel--ancho">
-      <div>
-        <h2>{titulo}</h2>
-        {sub && <p className="muted">{sub}</p>}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function Atencion({ texto }: { texto: string }) {
-  return (
-    <section className="atencion" aria-label="Requiere tu atención">
-      <span className="atencion__tag">Requiere tu atención</span>
-      <span>{texto}</span>
-    </section>
-  );
-}
-
-const grafSiervo = <Barras vals={[2, 3, 1, 4, 3, 2]} labels={["May", "Jun", "Jul", "Ago", "Sep", "Oct"]} meta={3} label="Turnos por mes" />;
-const grafLider = <Linea vals={[80, 85, 78, 90, 92, 88, 95, 91]} labels={semanas} meta={90} label="Cobertura de Sonido" />;
-const grafPastor = <Barras vals={[92, 88, 95, 90, 84, 93, 96, 89]} labels={semanas} meta={90} label="Cobertura de la iglesia" />;
-
-export function Inicio({ rol, nombre, onNavegar }: Props) {
-  if (rol === "TE") {
-    return (
-      <div className="inicio">
-        <header className="inicio-head">
-          <div className="kicker">Inicio · Siervo</div>
-          <h1>Hola, <em>{nombre}</em>.</h1>
-          <p className="summary">Tienes <b>2</b> turnos por confirmar esta semana.</p>
-        </header>
-        <Atencion texto="Confirma tu turno del domingo 18 antes de las 6 p. m." />
-        <div className="stats">
-          <div className="stat"><span>Por confirmar</span><b>2</b></div>
-          <div className="stat"><span>Próximo turno</span><b>Dom 08:00</b></div>
-          <div className="stat"><span>Turnos este mes</span><b>3</b></div>
+    <div className="campana-wrap" ref={ref}>
+      <button className="campana" aria-haspopup="true" aria-expanded={abierta} aria-label="Bandeja" onClick={() => setAbierta((v) => !v)}>
+        <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+        {total > 0 && <b>{total}</b>}
+      </button>
+      {abierta && (
+        <div className="bandeja-menu">
+          <div className="bm-head">Pendientes</div>
+          {items.map((i) => (
+            <button key={i.id} className="bm-row" onClick={() => leer(i.id)}>
+              <span>{i.t}</span>
+              <span className={i.n ? "bm-n" : "bm-n leido"}>{i.n}</span>
+            </button>
+          ))}
+          <button className="bm-todo" onClick={leerTodo}>Marcar todo como leído</button>
         </div>
-        <section className="panel">
+      )}
+    </div>
+  );
+}
+
+function VistaSiervo() {
+  const [estado, setEstado] = useState<"pendiente" | "acepto" | "no">("pendiente");
+  return (
+    <>
+      <div className="card ancla">
+        <div>
+          <small className="eyebrow">Próximo culto</small>
+          <h2>Domingo 26 · 08:00 y 10:00</h2>
+        </div>
+        <div className="pct pct--sm">Confirmado<small>2 de 2 turnos</small></div>
+      </div>
+      <div className="card accion">
+        <div><strong>Confirma tu turno del 2 de nov.</strong></div>
+        <div className="acc-btns">
+          <button className="btn" disabled={estado !== "pendiente"} onClick={() => setEstado("acepto")}>
+            {estado === "acepto" ? "Confirmado" : "Acepto"}
+          </button>
+          <button className="btn ghost" disabled={estado !== "pendiente"} onClick={() => setEstado("no")}>
+            {estado === "no" ? "Avisado" : "No puedo"}
+          </button>
+        </div>
+      </div>
+      <div className="stats">
+        <div className="card stat"><b>3</b><span>Turnos este mes</span></div>
+        <div className="card stat"><b>9 h</b><span>Horas servidas</span></div>
+        <div className="card stat"><b>4 sem</b><span>Desde tu último turno</span></div>
+      </div>
+      <div className="grid2">
+        <div className="card">
+          <h3>Horas por mes</h3>
+          <Barras datos={[4, 6, 5, 7, 6, 9]} max={10} color="#479ffa" etiquetas={["May", "Jun", "Jul", "Ago", "Sep", "Oct"]} label="Horas por mes" />
+        </div>
+        <div className="card">
+          <h3>Mis próximos turnos</h3>
+          <div className="row"><div>Culto 1</div><span className="tag ok">Confirmado</span></div>
+          <div className="row"><div>Culto 2</div><span className="tag ok">Confirmado</span></div>
+          <div className="row"><div>Ensayo de sonido</div><span className="tag warn">Pendiente</span></div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function VistaLider() {
+  const [vacantes, setVacantes] = useState(2);
+  const [avisado, setAvisado] = useState(false);
+  const cubiertos = 8 - vacantes;
+  const pct = Math.round((cubiertos / 8) * 100);
+  const dom = ["S-5", "S-4", "S-3", "S-2", "S-1", "Hoy"];
+  return (
+    <>
+      <div className="card ancla">
+        <div>
+          <small className="eyebrow">Cobertura · Sonido · domingo 26</small>
+          <h2>{cubiertos} de 8 puestos cubiertos</h2>
+          <div className="meter"><i style={{ width: `${pct}%` }} /></div>
+        </div>
+        <div className="pct">{pct}%<small>cubierto</small></div>
+      </div>
+      <div className="card accion">
+        <div><strong>{vacantes > 0 ? `Cubrir ${vacantes} vacantes del domingo 26` : "Domingo 26 cubierto"}</strong></div>
+        <button className="btn" disabled={vacantes === 0} onClick={() => setVacantes(0)}>
+          {vacantes === 0 ? "Listo" : "Asignar sugeridos"}
+        </button>
+      </div>
+      <div className="stats">
+        <div className="card stat"><b>5</b><span>Confirmados</span></div>
+        <div className="card stat"><b>2</b><span>Sin respuesta</span></div>
+        <div className="card stat"><b>3</b><span>Sin servir +3 sem</span></div>
+      </div>
+      <div className="grid2">
+        <div className="card">
+          <h3>Cobertura por domingo</h3>
+          <Barras datos={[70, 85, 60, 90, 75, 75]} max={100} color="#ffa16c" etiquetas={dom} label="Cobertura por domingo" />
+        </div>
+        <div className="card">
+          <h3>Alertas</h3>
           <div className="row">
-            <div><strong>Falta marcar tu disponibilidad</strong><div className="muted">Próxima semana: 3 servicios sin responder</div></div>
-            <button className="btn solid" type="button" onClick={() => onNavegar?.("disp")}>Marcar ahora</button>
+            <div>{vacantes > 0 ? "2 vacantes en Sonido, domingo 26" : "Sonido cubierto"}</div>
+            <button className="mini" disabled={vacantes === 0} onClick={() => setVacantes(0)}>{vacantes === 0 ? "Hecho" : "Asignar"}</button>
           </div>
-        </section>
-        <Panel titulo="Mis próximos servicios" sub="Tu compromiso de las próximas semanas">
-          <div className="row"><div><strong>Dom 18 · 11:00 · Culto dominical</strong><div className="muted">Sonido principal</div></div><span className="okc">Confirmado</span></div>
-          <div className="row"><div><strong>Mié 21 · 19:00 · Círculo de oración</strong><div className="muted">Monitor</div></div><span className="prio">Pendiente</span></div>
-          <div className="row"><div><strong>Vie 23 · 20:00 · Jóvenes</strong><div className="muted">Sonido principal</div></div><span className="prio alta">Cambiado</span></div>
-        </Panel>
-        <Panel titulo="Mis turnos" sub="Confirma o rechaza">
-          <div className="row"><div><strong>Culto dominical · Sonido</strong><div className="muted">Dom 18 · 11:00</div></div><div><button className="act" type="button">Confirmar</button> <button className="act" type="button">Rechazar</button></div></div>
-          <div className="row"><div><strong>Círculo de oración</strong><div className="muted">Mié 21 · 19:00</div></div><div><button className="act" type="button">Confirmar</button> <button className="act" type="button">Rechazar</button></div></div>
-        </Panel>
-        <Panel titulo="Mis turnos por mes" sub="Turnos confirmados en los últimos 6 meses">{grafSiervo}</Panel>
-      </div>
-    );
-  }
-
-  if (rol === "LE") {
-    return (
-      <div className="inicio">
-        <header className="inicio-head">
-          <div className="kicker">Inicio · Líder de Sonido</div>
-          <h1>Hola, <em>{nombre}</em>.</h1>
-          <p className="summary">Tienes <b>2</b> turnos sin cubrir en tu ministerio.</p>
-        </header>
-        <Atencion texto="Mateo tiene conflicto: quedó en dos servicios el domingo 18 a las 11:00." />
-        <div className="stats">
-          <div className="stat"><span>Por confirmar</span><b>1</b></div>
-          <div className="stat"><span>Sin cubrir en Sonido</span><b className="warn">2</b></div>
-          <div className="stat"><span>Próximo turno</span><b>Dom 11:00</b></div>
+          <div className="row">
+            <div>Luis Ortiz no ha respondido</div>
+            <button className="mini" disabled={avisado} onClick={() => setAvisado(true)}>{avisado ? "Hecho" : "Recordar"}</button>
+          </div>
         </div>
-        <Panel titulo="Hoy en Sonido" sub="Turnos de tu ministerio, en orden">
-          <div className="linea">
-            <div className="linea__item"><span className="linea__hora">08:00</span><div><strong>Culto dominical</strong><div className="muted">Andrea</div></div><span className="okc">Cubierto</span></div>
-            <div className="linea__item"><span className="linea__hora">11:00</span><div><strong>Culto dominical</strong><div className="muted">Mateo y Sofía (conflicto)</div></div><span className="prio alta">Revisar</span></div>
-          </div>
-        </Panel>
-        <Panel titulo="Técnicos sin disponibilidad" sub="No han marcado la próxima semana. Sin eso no puedes asignarlos con seguridad.">
-          <div className="row"><div><strong>Mateo</strong><div className="muted">0 de 3 servicios respondidos</div></div><button className="act" type="button">Recordar</button></div>
-          <div className="row"><div><strong>Sofía</strong><div className="muted">1 de 3 servicios respondidos</div></div><button className="act" type="button">Recordar</button></div>
-        </Panel>
-        <Panel titulo="Solicitudes de cambio" sub="Turnos que tus técnicos piden mover">
-          <div className="row"><div><strong>Mateo pide cambiar el Dom 18 · 11:00</strong><div className="muted">Motivo: viaje de trabajo</div></div><div><button className="act" type="button">Aprobar</button> <button className="act" type="button">Rechazar</button></div></div>
-          <div className="row"><div><strong>Sofía pide cambiar el Vie 23 · 20:00</strong><div className="muted">Motivo: examen</div></div><div><button className="act" type="button">Aprobar</button> <button className="act" type="button">Rechazar</button></div></div>
-        </Panel>
-        <Panel titulo="Próximos servicios de Sonido" sub="Quién está asignado a cada uno">
-          <div className="row"><div><strong>Dom 18 · 11:00</strong><div className="muted">Sonido principal</div></div><span className="prio alta">Mateo y Sofía (conflicto)</span></div>
-          <div className="row"><div><strong>Dom 18 · 08:00</strong><div className="muted">Sonido principal</div></div><span>Andrea</span></div>
-          <div className="row"><div><strong>Vie 23 · 20:00</strong><div className="muted">Sonido principal</div></div><span className="muted">Falta 1</span></div>
-        </Panel>
-        <Panel titulo="Cobertura de Sonido" sub="Porcentaje de turnos cubiertos, últimas 8 semanas">{grafLider}</Panel>
       </div>
-    );
-  }
+    </>
+  );
+}
 
+function VistaPastor() {
+  const [aprobado, setAprobado] = useState(false);
+  return (
+    <>
+      <div className="card accion">
+        <div><strong>{aprobado ? "Anuncios al día" : "Aprobar 3 anuncios pendientes"}</strong></div>
+        <button className="btn" disabled={aprobado} onClick={() => setAprobado(true)}>{aprobado ? "Aprobado" : "Revisar"}</button>
+      </div>
+      <div className="card ancla">
+        <div>
+          <small className="eyebrow">Cobertura de la iglesia</small>
+          <h2>Asistencia y cobertura</h2>
+        </div>
+        <div className="pct">82%<small>cobertura</small></div>
+      </div>
+      <div className="stats">
+        <div className="card stat"><b>142</b><span>Asistentes último culto</span></div>
+        <div className="card stat"><b>5</b><span>Ministerios activos</span></div>
+        <div className="card stat"><b>3</b><span>Alertas abiertas</span></div>
+      </div>
+      <div className="grid2">
+        <div className="card">
+          <h3>Asistencia</h3>
+          <Linea datos={[118, 131, 124, 140, 127, 135, 138, 142]} max={160} etiquetas={["S-7", "S-6", "S-5", "S-4", "S-3", "S-2", "S-1", "Hoy"]} label="Asistencia" />
+        </div>
+        <div className="card">
+          <h3>Cobertura por ministerio</h3>
+          <Barras datos={[100, 75, 60, 90, 80]} max={100} color="#4ebe96" etiquetas={["Aseo", "Sonido", "Medios", "Cocina", "Niños"]} label="Cobertura por ministerio" />
+        </div>
+      </div>
+    </>
+  );
+}
+
+function VistaDev() {
+  const [pendientes, setPendientes] = useState(["Pedro Gil", "Laura Mejía", "Andrés Rey"]);
+  return (
+    <>
+      <div className="card ancla">
+        <div>
+          <small className="eyebrow">Estado de la app</small>
+          <h2>Todo en orden</h2>
+        </div>
+        <div className="pct pct--sm">Estable<small>0 incidentes abiertos</small></div>
+      </div>
+      <div className="stats">
+        <div className="card stat"><b>38</b><span>Usuarios activos hoy</span></div>
+        <div className="card stat"><b>2</b><span>Errores últimas 24 h</span></div>
+        <div className="card stat"><b>{pendientes.length}</b><span>Solicitudes de acceso</span></div>
+      </div>
+      <div className="grid2">
+        <div className="card">
+          <h3>Errores de la semana</h3>
+          <Barras datos={[1, 0, 3, 1, 0, 2, 2]} max={4} color="#f0616d" etiquetas={["L", "M", "X", "J", "V", "S", "D"]} label="Errores de la semana" />
+        </div>
+        <div className="card">
+          <h3>Solicitudes de acceso</h3>
+          {pendientes.map((n) => (
+            <div className="row" key={n}>
+              <div>{n}</div>
+              <button className="mini" onClick={() => setPendientes((p) => p.filter((x) => x !== n))}>Aprobar</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+export function Inicio({ rol, nombre }: Props) {
   return (
     <div className="inicio">
-      <header className="inicio-head">
-        <div className="kicker">Inicio · Pastor</div>
-        <h1>Hola, <em>{nombre}</em>.</h1>
-        <p className="summary">Hay <b>1</b> turno sin cubrir en la iglesia esta semana.</p>
+      <header className="top">
+        <div>
+          <small className="eyebrow">Próximo servicio · domingo 26 oct · 08:00 y 10:00</small>
+          <h1>Hola, {nombre}</h1>
+        </div>
+        <Bandeja />
       </header>
-      <Atencion texto="Sonido tiene un conflicto de asignación y 2 turnos sin cubrir esta semana." />
-      <div className="stats">
-        <div className="stat"><span>Sin cubrir</span><b className="warn">1</b></div>
-        <div className="stat"><span>Servicios esta semana</span><b>4</b></div>
-        <div className="stat"><span>Usuarios activos</span><b>38</b></div>
-      </div>
-      <Panel titulo="Hoy en la iglesia" sub="Servicios del día, en orden">
-        <div className="linea">
-          <div className="linea__item"><span className="linea__hora">08:00</span><div><strong>Culto dominical</strong><div className="muted">Sonido, Media, Acomodación</div></div><span className="okc">Completo</span></div>
-          <div className="linea__item"><span className="linea__hora">11:00</span><div><strong>Culto dominical</strong><div className="muted">Sonido sin cubrir</div></div><span className="warn-txt">Falta 1</span></div>
-          <div className="linea__item"><span className="linea__hora">19:00</span><div><strong>Círculo de oración</strong><div className="muted">Mié · próximo</div></div><span className="muted">Pendiente</span></div>
+
+      <section className="comun">
+        <div className="card">
+          <h3>Anuncios recientes</h3>
+          <div className="row"><div>Ensayo viernes</div></div>
+          <div className="row"><div>Cambio en Culto 2</div></div>
         </div>
-      </Panel>
-      <Panel titulo="Conflictos de asignación" sub="Técnicos asignados a dos servicios que se cruzan">
-        <div className="row"><div><strong>Mateo</strong><div className="muted">Dom 18 · 11:00 (Sonido) y Dom 18 · 11:30 (Media)</div></div><button className="act" type="button">Resolver</button></div>
-      </Panel>
-      <Panel titulo="Disponibilidad de la semana" sub="Técnicos que aún no han respondido">
-        <div className="stats stats--compactos">
-          <div className="stat"><span>Sin responder</span><b className="warn">6</b></div>
-          <div className="stat"><span>Respondieron</span><b>32</b></div>
-          <div className="stat"><span>Ministerios afectados</span><b>2</b></div>
-        </div>
-      </Panel>
-      <Panel titulo="Cobertura de la iglesia" sub="Porcentaje de turnos cubiertos, últimas 8 semanas">{grafPastor}</Panel>
+      </section>
+
+      {rol === "te" && <VistaSiervo />}
+      {rol === "le" && <VistaLider />}
+      {rol === "ad" && <VistaPastor />}
+      {rol === "dev" && <VistaDev />}
     </div>
   );
 }

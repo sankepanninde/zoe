@@ -1,135 +1,130 @@
-import { useState } from 'react';
-import { X, Send } from 'lucide-react';
+import { useEffect, useId, useState, type FormEvent } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import type { Service } from '@/types';
+import { requestReplacement } from '@/lib/my-schedule.api';
+import { getApiError } from '@/lib/api';
+import { formatFechaLarga, type MyService } from '@/lib/my-schedule';
 
-interface ReplaceRequestModalProps {
-  open: boolean;
-  service: Service;
-  onClose: () => void;
-}
-
-const REASONS = [
+const MOTIVOS = [
   'Viaje fuera de la ciudad',
   'Compromiso familiar',
   'Motivo de salud',
   'Compromiso laboral',
-  'Otro (escribe abajo)',
 ];
+const OTRO = 'Otro';
+const MAX_CARACTERES = 500;
 
-export function ReplaceRequestModal({
-  open,
-  service,
-  onClose,
-}: ReplaceRequestModalProps) {
-  const [reason, setReason] = useState('');
-  const [customReason, setCustomReason] = useState('');
+interface Props {
+  service: MyService;
+  onClose: () => void;
+}
 
-  if (!open) return null;
+export function ReplaceRequestModal({ service, onClose }: Props) {
+  const titleId = useId();
+  const [motivo, setMotivo] = useState('');
+  const [detalle, setDetalle] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = () => {
-    const finalReason =
-      reason === 'Otro (escribe abajo)' ? customReason : reason;
+  const mutation = useMutation({
+    mutationFn: (reason: string) => requestReplacement(service.assignment.id, reason),
+    onSuccess: () => {
+      toast.success('Solicitud enviada al líder de tu ministerio');
+      onClose();
+    },
+    onError: (err) => toast.error(getApiError(err)),
+  });
 
-    if (!finalReason.trim()) {
-      toast.error('Selecciona o escribe un motivo');
+  const ocupado = mutation.isPending;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !ocupado) onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [ocupado, onClose]);
+
+  const submit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const reason = (motivo === OTRO ? detalle : motivo).trim();
+    if (!reason) {
+      setError('Selecciona un motivo o descríbelo.');
       return;
     }
-
-    // TODO: Fase 2 - enviar notificación al líder vía backend
-    toast.success('Solicitud enviada al líder del ministerio');
-    setReason('');
-    setCustomReason('');
-    onClose();
+    if (reason.length > MAX_CARACTERES) {
+      setError(`Máximo ${MAX_CARACTERES} caracteres.`);
+      return;
+    }
+    setError(null);
+    mutation.mutate(reason);
   };
-
-  const fullDate = new Intl.DateTimeFormat('es-CO', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    timeZone: 'UTC',
-  }).format(new Date(service.date));
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      className="ms-modal-backdrop"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget && !ocupado) onClose();
+      }}
     >
-      <div className="glass-panel w-full max-w-md rounded-3xl p-6">
-        {/* Header */}
-        <div className="mb-5 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-900">
-            Solicitar Reemplazo
-          </h3>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/60 hover:text-slate-700"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Info del servicio */}
-        <p className="mb-4 text-xs text-slate-500">
-          Servicio:{' '}
-          <strong className="capitalize text-slate-700">{fullDate}</strong> •{' '}
-          {service.startTime} hrs
+      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="k-panel ms-modal">
+        <h2 id={titleId} className="ms-modal__title">
+          Solicitar reemplazo
+        </h2>
+        <p className="k-muted">
+          {formatFechaLarga(service.date)} · {service.startTime} · {service.assignment.position}
         </p>
 
-        {/* Motivos */}
-        <div className="mb-4">
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Motivo
-          </label>
-          <div className="space-y-2">
-            {REASONS.map((r) => (
-              <label
-                key={r}
-                className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200/60 bg-white/60 px-3 py-2 transition-colors hover:bg-white"
-              >
+        <form onSubmit={submit} noValidate>
+          <fieldset className="ms-radios" disabled={ocupado}>
+            <legend className="k-label">Motivo</legend>
+            {[...MOTIVOS, OTRO].map((m) => (
+              <label key={m}>
                 <input
                   type="radio"
-                  name="reason"
-                  value={r}
-                  checked={reason === r}
-                  onChange={(e) => setReason(e.target.value)}
-                  className="h-3.5 w-3.5 accent-blue-600"
+                  name="motivo"
+                  value={m}
+                  checked={motivo === m}
+                  onChange={() => setMotivo(m)}
                 />
-                <span className="text-xs font-medium text-slate-700">{r}</span>
+                <span>{m === OTRO ? 'Otro (escribe abajo)' : m}</span>
               </label>
             ))}
-          </div>
-        </div>
+          </fieldset>
 
-        {/* Motivo personalizado */}
-        {reason === 'Otro (escribe abajo)' && (
-          <div className="mb-4">
-            <textarea
-              value={customReason}
-              onChange={(e) => setCustomReason(e.target.value)}
-              placeholder="Describe el motivo..."
-              rows={2}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-        )}
+          {motivo === OTRO && (
+            <label className="k-field">
+              <span className="k-field__label">Describe el motivo</span>
+              <textarea
+                className="k-input"
+                rows={3}
+                maxLength={MAX_CARACTERES}
+                value={detalle}
+                onChange={(e) => setDetalle(e.target.value)}
+                disabled={ocupado}
+              />
+            </label>
+          )}
 
-        {/* Acciones */}
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="rounded-full px-4 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-white/60"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="flex items-center gap-1.5 rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700"
-          >
-            <Send className="h-3.5 w-3.5" />
-            Enviar Solicitud
-          </button>
-        </div>
+          {error && (
+            <p className="ms-err" role="alert">
+              {error}
+            </p>
+          )}
+
+          <div className="ms-modal__actions">
+            <button
+              type="button"
+              className="k-btn k-btn--ghost"
+              onClick={onClose}
+              disabled={ocupado}
+            >
+              Cancelar
+            </button>
+            <button type="submit" className="k-btn" disabled={ocupado}>
+              {ocupado ? 'Enviando…' : 'Enviar solicitud'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

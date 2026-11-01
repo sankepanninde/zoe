@@ -47,7 +47,7 @@ export async function canManageUser(
   churchId: string,
   targetUserId: string
 ): Promise<boolean> {
-  if (currentRole === 'ADMIN' || currentRole === 'SUPER_ADMIN') return true;
+  if (currentRole === 'ADMIN' || currentRole === 'DEV') return true;
 
   // Obtener ministerios que el current user lidera
   const ledMinistries = await prisma.userMinistry.findMany({
@@ -78,7 +78,7 @@ export async function listUsers(
   onlyActive = false
 ) {
   // ADMIN ve toda la iglesia
-  if (currentRole === 'ADMIN' || currentRole === 'SUPER_ADMIN') {
+  if (currentRole === 'ADMIN' || currentRole === 'DEV') {
     return prisma.user.findMany({
       where: {
         churchId,
