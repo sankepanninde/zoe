@@ -117,7 +117,13 @@ export function MySchedule() {
               Aún no tienes asignaciones. Cuando tu líder te asigne a un servicio, aparecerá aquí.
             </p>
           ) : (
-            <YearlyMatrix year={year} porDia={porDia} onReplace={setReplacing} />
+            <YearlyMatrix
+              year={year}
+              porDia={porDia}
+              onReplace={setReplacing}
+              onConfirm={(id) => confirmMutation.mutate(id)}
+              confirmando={confirmMutation.isPending}
+            />
           )}
         </>
       )}

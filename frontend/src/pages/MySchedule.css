@@ -268,7 +268,8 @@ textarea:focus-visible {
   border: 1px solid var(--line);
   border-radius: 12px;
 }
-.ms-cal .k-btn {
+.ms-cal .k-btn,
+.ms-cal__campo .k-btn {
   width: auto;
   min-height: 44px;
   padding: 0 18px;
@@ -278,9 +279,76 @@ textarea:focus-visible {
   text-decoration: none;
   white-space: nowrap;
 }
-.ms-cal__campo .k-btn { flex: 0 0 auto; }
 .ms-cal .ms-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.ms-small { font-size: 12px; color: var(--muted); }
 .ms-cal__pasos { font-size: 13px; color: var(--muted); }
 .ms-cal__pasos summary { cursor: pointer; color: var(--fg); font-weight: 600; }
 .ms-cal__pasos li { margin: 6px 0; }
+
+/* Mis turnos */
+.ms-page { text-align: left; }
+.ms-page > * { width: 100%; justify-self: stretch; }
+
+.ms-page .ms-next { display: grid; gap: 8px; justify-items: start; text-align: left; }
+.ms-page .ms-next__acciones { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
+.ms-page .ms-next__acciones .k-btn { width: auto; min-height: 44px; padding: 0 18px; }
+
+.ms-page .ms-months {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.ms-page .ms-month {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card-bg);
+  min-height: 120px;
+  box-sizing: border-box;
+}
+.ms-page .ms-month__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.ms-page .ms-month__head h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.ms-page .ms-month__head span { font-size: 13px; color: var(--muted); }
+
+.ms-page .ms-days { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ms-page .ms-day {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.ms-page .ms-svc { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.ms-page .ms-svc__acciones { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+.ms-page .ms-badge,
+.ms-page .k-status {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  padding: 4px 10px;
+  line-height: 1.2;
+  font-size: 12px;
+}
+.ms-page .ms-mini {
+  width: auto;
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+.ms-page .ms-pasados { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+
+@media (max-width: 760px) {
+  .ms-page .ms-months { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+  .ms-page .ms-months { grid-template-columns: 1fr; }
+}
