@@ -68,3 +68,22 @@
 }
 .cro-wrap { background: var(--bg); color: var(--fg); font-family: 'Manrope', system-ui, sans-serif; }
 .cro-cab h1, .mes h3 { font-family: 'Manrope', system-ui, sans-serif; }
+.cro-semana {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
+.cro-semana__cal { min-width: 0; }
+.cro-panel {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+}
+@media (max-width: 960px) {
+  .cro-semana { grid-template-columns: 1fr; }
+  .cro-panel { position: static; max-height: none; }
+}
