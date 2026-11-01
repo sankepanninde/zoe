@@ -352,3 +352,86 @@ textarea:focus-visible {
 @media (max-width: 420px) {
   .ms-page .ms-months { grid-template-columns: 1fr; }
 }
+/* Calendario Mes / Año de Mis turnos */
+.ms-page .mc { display: grid; gap: 14px; }
+.ms-page .mc__barra { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.ms-page .mc__seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.ms-page .mc__seg button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+.ms-page .mc__seg button[aria-pressed="true"] { background: var(--ink); color: var(--ink-fg); }
+.ms-page .mc__nav { display: flex; align-items: center; gap: 8px; }
+.ms-page .mc__nav strong { min-width: 160px; text-align: center; font-weight: 600; }
+.ms-page .mc__nav button { width: 36px; min-height: 36px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--fg); font: inherit; font-size: 18px; cursor: pointer; }
+.ms-page .mc__nav button:disabled { opacity: .4; cursor: not-allowed; }
+.ms-page .mc__pasados { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.ms-page .mc__cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+.ms-page .mc__panel { position: sticky; top: 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--card-bg); padding: 16px; display: grid; gap: 12px; }
+.ms-page .mc__panel h3 { margin: 0; font-size: 18px; font-weight: 600; }
+.ms-page .mc__muted { color: var(--muted); font-size: 14px; margin: 0; }
+.ms-page .mc__cal { border: 1px solid var(--line); border-radius: 16px; background: var(--card-bg); overflow: hidden; }
+.ms-page .mc__dows,
+.ms-page .mc__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.ms-page .mc__dows span { padding: 10px 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); text-align: center; border-bottom: 1px solid var(--line); }
+.ms-page .mc__dia {
+  min-height: 96px; padding: 8px; min-width: 0;
+  border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background: transparent; color: var(--fg); text-align: left; font: inherit; cursor: pointer;
+  display: grid; align-content: start; gap: 6px;
+}
+.ms-page .mc__dia:nth-child(7n) { border-right: 0; }
+.ms-page .mc__dia[aria-pressed="true"] { background: var(--line); }
+.ms-page .mc__dia-num { font-size: 13px; font-weight: 600; }
+.ms-page .mc__vacio { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(0, 0, 0, .2); }
+.ms-page .mc__chip {
+  display: block; font-size: 12px; line-height: 1.3; padding: 3px 6px; border-radius: 6px;
+  background: rgba(255, 255, 255, .04); border-left: 3px solid var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ms-page .mc__chip--confirmed { border-left-color: var(--ok); }
+.ms-page .mc__chip--pending { border-left-color: var(--warm); }
+.ms-page .mc__chip--rejected { border-left-color: var(--no); color: var(--muted); text-decoration: line-through; }
+.ms-page .mc__dots { display: none; gap: 4px; }
+.ms-page .mc__dot { width: 6px; height: 6px; border-radius: 999px; background: var(--muted); }
+.ms-page .mc__dot--confirmed { background: var(--ok); }
+.ms-page .mc__dot--pending { background: var(--warm); }
+.ms-page .mc__dot--rejected { background: var(--no); }
+.ms-page .mc__anio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.ms-page .mc__mini { border: 1px solid var(--line); border-radius: 14px; background: var(--card-bg); padding: 12px; display: grid; gap: 8px; min-width: 0; }
+.ms-page .mc__mini-head { display: flex; justify-content: space-between; align-items: baseline; }
+.ms-page .mc__mini-head small { color: var(--muted); font-size: 12px; }
+.ms-page .mc__mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; font-size: 11px; text-align: center; }
+.ms-page .mc__mini-grid > span { min-height: 26px; display: grid; place-items: center; color: var(--muted); }
+.ms-page .mc__mini-dia {
+  position: relative; min-height: 26px; padding: 0; border: 0; border-radius: 6px;
+  background: transparent; color: var(--fg); font: inherit; font-size: 11px; cursor: pointer;
+}
+.ms-page .mc__mini-dia:hover { background: rgba(255, 255, 255, .06); }
+.ms-page .mc__mini-dia[aria-pressed="true"] { background: var(--line); }
+.ms-page .mc__mini-dia::after {
+  content: ""; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+  width: 5px; height: 5px; border-radius: 999px; background: var(--warm);
+}
+.ms-page .mc__mini-dia--ok::after { background: var(--ok); }
+.ms-page .mc__mini-dia--no::after { background: var(--no); }
+.ms-page .mc__srv { display: grid; gap: 6px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+.ms-page .mc__srv-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ms-page .mc__srv small { color: var(--muted); }
+.ms-page .mc__pill { display: inline-flex; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); font-size: 12px; white-space: nowrap; }
+.ms-page .mc__pill--confirmed { border-color: var(--ok); color: var(--ok); }
+.ms-page .mc__pill--pending { border-color: var(--warm); color: var(--warm); }
+.ms-page .mc__pill--rejected { border-color: var(--no); color: var(--no); }
+.ms-page .mc__acc { display: flex; gap: 8px; flex-wrap: wrap; }
+.ms-page .mc__btn { min-height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--fg); font: inherit; font-size: 13px; cursor: pointer; }
+.ms-page .mc__btn--primary { background: var(--ink); color: var(--ink-fg); border-color: var(--ink); }
+.ms-page .mc__btn:disabled { opacity: .5; cursor: not-allowed; }
+
+@media (max-width: 860px) {
+  .ms-page .mc__cuerpo { grid-template-columns: 1fr; }
+  .ms-page .mc__panel { position: static; }
+  .ms-page .mc__anio { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .ms-page .mc__dia { min-height: 56px; padding: 6px 4px; justify-items: center; }
+  .ms-page .mc__chip { display: none; }
+  .ms-page .mc__dots { display: flex; }
+  .ms-page .mc__anio { grid-template-columns: 1fr; }
+}
