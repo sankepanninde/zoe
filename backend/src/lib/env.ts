@@ -36,10 +36,20 @@ const envSchema = z.object({
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
 }).superRefine((data, ctx) => {
-  // Exigir variables críticas solo en producción
+  // Solo validamos las variables realmente críticas para el arranque
+  // Las de email son "opcionales pero recomendadas": si faltan, la app arranca pero no envía correos
   if (data.NODE_ENV === 'production') {
-    if (!data.RESEND_API_KEY) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'RESEND_API_KEY es obligatorio en producción', path: ['RESEND_API_KEY'] });
-    if (!data.CLOUDINARY_CLOUD_NAME) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'CLOUDINARY_CLOUD_NAME es obligatorio en producción', path: ['CLOUDINARY_CLOUD_NAME'] });
+    if (!data.CLOUDINARY_CLOUD_NAME) {
+      ctx.addIssue({ 
+        code: z.ZodIssueCode.custom, 
+        message: 'CLOUDINARY_CLOUD_NAME es obligatorio en producción', 
+        path: ['CLOUDINARY_CLOUD_NAME'] 
+      });
+    }
+    // Warning silencioso para las de email
+    if (!data.RESEND_API_KEY) {
+      console.warn('⚠️  RESEND_API_KEY no está configurado. Los correos de recuperación no funcionarán.');
+    }
   }
 });
 
