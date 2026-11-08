@@ -166,13 +166,18 @@ export function Cronograma() {
 
       {vista === 'anio' ? (
         <VistaAnio
-          anio={anio}
-          porFecha={porFecha}
-          selFecha={selFecha}
-          onDia={setSelFecha}
-          onVerSemana={irASemana}
-          esLider={esLider}
-        />
+  anio={anio}
+  porFecha={porFecha}
+  selFecha={selFecha}
+  onDia={setSelFecha}
+  onVerSemana={irASemana}
+  esLider={esLider}
+  usuarios={usuarios.data ?? []}
+  miId={user?.id ?? ''}
+  onAsignar={(serviceId, userId, position) => asignar.mutate({ serviceId, userId, position })}
+  onQuitar={(serviceId, assignmentId) => quitar.mutate({ serviceId, assignmentId })}
+  asignando={asignar.isPending}
+/>
       ) : (
         <VistaSemana
           semana={semana}
@@ -203,6 +208,7 @@ export function Cronograma() {
 }
 
 // ---------- Vista año ----------
+// ---------- Vista año ----------
 function VistaAnio(props: {
   anio: number;
   porFecha: Record<string, Service[]>;
@@ -210,8 +216,13 @@ function VistaAnio(props: {
   onDia: (f: string) => void;
   onVerSemana: (f: string) => void;
   esLider: boolean;
+  usuarios: User[];
+  miId: string;
+  onAsignar: (serviceId: string, userId: string, position: string) => void;
+  onQuitar: (serviceId: string, assignmentId: string) => void;
+  asignando: boolean;
 }) {
-  const { anio, porFecha, selFecha, onDia, onVerSemana, esLider } = props;
+  const { anio, porFecha, selFecha, onDia, onVerSemana, esLider, usuarios, miId, onAsignar, onQuitar, asignando } = props;
   const lista = selFecha ? porFecha[selFecha] ?? [] : [];
 
   return (
@@ -259,9 +270,16 @@ function VistaAnio(props: {
             <strong>{capitalizar(fmt(selFecha, { weekday: 'long', day: 'numeric', month: 'long' }))}</strong>
             {lista.length === 0 && <p className="k-muted">Sin servicios este día.</p>}
             {lista.map((s) => (
-              <div key={s.id} className="cro-fila">
-                <span>{s.title || s.serviceType.name} · {hora(s.startTime)}–{hora(s.endTime)}</span>
-                <span className="k-muted">{s.assignments.length} asignados</span>
+              <div key={s.id} className="caja" style={{ display: 'grid', gap: 12 }}>
+                <DetalleServicio
+                  servicio={s}
+                  esLider={esLider}
+                  usuarios={usuarios}
+                  miId={miId}
+                  onAsignar={onAsignar}
+                  onQuitar={onQuitar}
+                  asignando={asignando}
+                />
               </div>
             ))}
             <div className="acciones">
